@@ -23,6 +23,18 @@ class GameSessionsController < ApplicationController
   def create
     @game_session = GameSession.new(game_session_params)
 
+    # Deduct tokens for the requested duration
+    game = Game.find_by(id: @game_session.game_id)
+    child = Child.find_by(id: @game_session.child_id)
+    if game && child
+      cost = (game.token_per_minute || 0) * (@game_session.duration_minutes || 0)
+      if child.token_balance < cost
+        @game_session.errors.add(:base, 'Not enough tokens')
+      else
+        TokenTransaction.create!(child: child, amount: -cost, description: "Started game: #{game.name}")
+      end
+    end
+
     respond_to do |format|
       if @game_session.save
         format.html { redirect_to @game_session, notice: "Game session was successfully created." }

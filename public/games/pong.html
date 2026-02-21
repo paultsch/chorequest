@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Pong</title>
+    <style>
+      body { background: #000; color: #fff; display:flex; align-items:center; justify-content:center; height:100vh; }
+      canvas { background: #111; }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" width="600" height="400"></canvas>
+    <script>
+      // Minimal pong implementation
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      let ball = { x:300,y:200,vx:4,vy:3,r:8 };
+      let left = { x:10,y:150,w:10,h:100 };
+      let right = { x:580,y:150,w:10,h:100 };
+      function draw(){
+        ctx.clearRect(0,0,600,400);
+        ctx.fillStyle='#fff';
+        ctx.fillRect(left.x,left.y,left.w,left.h);
+        ctx.fillRect(right.x,right.y,right.w,right.h);
+        ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill();
+      }
+      function step(){
+        ball.x+=ball.vx; ball.y+=ball.vy;
+        if(ball.y<ball.r||ball.y>400-ball.r) ball.vy*=-1;
+        if(ball.x<left.x+left.w+ball.r){ if(ball.y>left.y&&ball.y<left.y+left.h) ball.vx*=-1; else reset(); }
+        if(ball.x>right.x-ball.r){ if(ball.y>right.y&&ball.y<right.y+right.h) ball.vx*=-1; else reset(); }
+        // simple AI for right paddle
+        right.y += (ball.y - (right.y+right.h/2))*0.05;
+        draw();
+      }
+      function reset(){ ball.x=300; ball.y=200; ball.vx=4*(Math.random()>0.5?1:-1); }
+      setInterval(step,16);
+    </script>
+  </body>
+</html>

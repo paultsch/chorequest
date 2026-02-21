@@ -1,3 +1,9 @@
+<div class="card">
+  <h2><%= game.name %></h2>
+  <p><%= game.description %></p>
+  <p>Cost: <%= game.token_per_minute %> tokens / minute</p>
+  <%= link_to 'Play (Pong)', '/games/pong.html', target: '_blank' %>
+</div>
 <div id="<%= dom_id game %>">
   <p>
     <strong>Name:</strong>

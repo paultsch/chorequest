@@ -1,3 +1,19 @@
+<div class="card">
+  <h2><%= child.name %> (Age: <%= child.age %>)</h2>
+  <p>Tokens: <%= child.token_balance %></p>
+
+  <h3>Today's chores</h3>
+  <ul>
+    <% ChoreAssignment.where(child: child, day: Date.today.strftime('%A')).each do |ca| %>
+      <li>
+        <strong><%= ca.chore.name %></strong> — <% if ca.completed %>Done<% else %>Not done<% end %>
+        <% unless ca.completed %>
+          <%= button_to 'Mark Done', chore_assignment_path(ca, chore_assignment: { completed: true }), method: :patch %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</div>
 <div id="<%= dom_id child %>">
   <p>
     <strong>Name:</strong>

@@ -7,10 +7,21 @@
     <%= csp_meta_tag %>
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "theme", media: "all", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
   <body>
-    <%= yield %>
+    <header class="card">
+      <% if parent_signed_in? %>
+        Signed in as <%= current_parent.name %> | <%= link_to 'Admin', admin_root_path if current_parent.is_admin? %> | <%= link_to 'Sign out', destroy_parent_session_path, method: :delete %>
+      <% else %>
+        <%= link_to 'Parent Sign In', new_parent_session_path %> | <%= link_to 'Child Sign In', new_child_session_path %>
+      <% end %>
+    </header>
+
+    <main>
+      <%= yield %>
+    </main>
   </body>
 </html>

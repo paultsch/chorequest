@@ -1,0 +1,30 @@
+<h1>Admin Dashboard</h1>
+
+<h2>Children</h2>
+<ul>
+  <% @children.each do |child| %>
+    <li><%= link_to child.name, child_path(child) %> — tokens: <%= child.token_balance %></li>
+  <% end %>
+</ul>
+
+<h2>Today's Chores</h2>
+<table>
+  <thead>
+    <tr><th>Child</th><th>Chore</th><th>Completed</th><th>Approved</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <% @chore_assignments_today.each do |ca| %>
+      <tr>
+        <td><%= ca.child.name %></td>
+        <td><%= ca.chore.name %></td>
+        <td><%= ca.completed %></td>
+        <td><%= ca.approved %></td>
+        <td>
+          <% unless ca.approved %>
+            <%= button_to 'Approve', chore_assignment_path(ca, chore_assignment: { approved: true }), method: :patch %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

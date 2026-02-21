@@ -1,0 +1,19 @@
+<div class="card">
+  <h1>Welcome to ChoreQuest</h1>
+  <p>A family-friendly chores & rewards app.</p>
+
+  <p>
+    <%= link_to 'Parent Sign In', new_parent_session_path, class: 'button' %>
+    <%= link_to 'Child Sign In', new_child_session_path, class: 'button' %>
+    <%= link_to 'Games', games_path, class: 'button' %>
+  </p>
+
+  <section class="card">
+    <h2>Quick Links</h2>
+    <ul>
+      <li><%= link_to 'Children', children_path %></li>
+      <li><%= link_to 'Chores', chores_path %></li>
+      <li><%= link_to 'Chore Assignments', chore_assignments_path %></li>
+    </ul>
+  </section>
+</div>

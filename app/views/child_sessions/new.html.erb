@@ -1,0 +1,15 @@
+<h1>Child Login</h1>
+
+<%= form_with url: child_session_path, local: true do |f| %>
+  <div>
+    <%= label_tag :child_id, 'Child ID' %>
+    <%= text_field_tag :child_id, params[:child_id] %>
+  </div>
+  <div>
+    <%= label_tag :pin_code, 'PIN' %>
+    <%= password_field_tag :pin_code %>
+  </div>
+  <div>
+    <%= submit_tag 'Sign in' %>
+  </div>
+<% end %>
