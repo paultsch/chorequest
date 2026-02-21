@@ -1,0 +1,47 @@
+<%= form_with(model: chore_assignment) do |form| %>
+  <% if chore_assignment.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(chore_assignment.errors.count, "error") %> prohibited this chore_assignment from being saved:</h2>
+
+      <ul>
+        <% chore_assignment.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :child_id, style: "display: block" %>
+    <%= form.text_field :child_id %>
+  </div>
+
+  <div>
+    <%= form.label :chore_id, style: "display: block" %>
+    <%= form.text_field :chore_id %>
+  </div>
+
+  <div>
+    <%= form.label :day, style: "display: block" %>
+    <%= form.text_field :day %>
+  </div>
+
+  <div>
+    <%= form.label :completed, style: "display: block" %>
+    <%= form.check_box :completed %>
+  </div>
+
+  <div>
+    <%= form.label :approved, style: "display: block" %>
+    <%= form.check_box :approved %>
+  </div>
+
+  <div>
+    <%= form.label :completion_photo, style: "display: block" %>
+    <%= form.text_field :completion_photo %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

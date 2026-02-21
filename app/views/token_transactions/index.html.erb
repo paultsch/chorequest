@@ -1,0 +1,14 @@
+<p style="color: green"><%= notice %></p>
+
+<h1>Token transactions</h1>
+
+<div id="token_transactions">
+  <% @token_transactions.each do |token_transaction| %>
+    <%= render token_transaction %>
+    <p>
+      <%= link_to "Show this token transaction", token_transaction %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New token transaction", new_token_transaction_path %>

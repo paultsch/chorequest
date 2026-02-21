@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  child: one
+  game: one
+  duration_minutes: 1
+  started_at: 2026-02-21 13:08:14
+  ended_at: 2026-02-21 13:08:14
+
+two:
+  child: two
+  game: two
+  duration_minutes: 1
+  started_at: 2026-02-21 13:08:14
+  ended_at: 2026-02-21 13:08:14

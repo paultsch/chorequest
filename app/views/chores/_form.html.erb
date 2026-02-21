@@ -1,0 +1,42 @@
+<%= form_with(model: chore) do |form| %>
+  <% if chore.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(chore.errors.count, "error") %> prohibited this chore from being saved:</h2>
+
+      <ul>
+        <% chore.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, style: "display: block" %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.label :description, style: "display: block" %>
+    <%= form.text_area :description %>
+  </div>
+
+  <div>
+    <%= form.label :definition_of_done, style: "display: block" %>
+    <%= form.text_area :definition_of_done %>
+  </div>
+
+  <div>
+    <%= form.label :token_amount, style: "display: block" %>
+    <%= form.number_field :token_amount %>
+  </div>
+
+  <div>
+    <%= form.label :recurrence, style: "display: block" %>
+    <%= form.text_field :recurrence %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

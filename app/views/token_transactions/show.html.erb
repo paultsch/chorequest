@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @token_transaction %>
+
+<div>
+  <%= link_to "Edit this token transaction", edit_token_transaction_path(@token_transaction) %> |
+  <%= link_to "Back to token transactions", token_transactions_path %>
+
+  <%= button_to "Destroy this token transaction", @token_transaction, method: :delete %>
+</div>

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  child: one
+  chore: one
+  day: MyString
+  completed: false
+  approved: false
+  completion_photo: MyString
+
+two:
+  child: two
+  chore: two
+  day: MyString
+  completed: false
+  approved: false
+  completion_photo: MyString

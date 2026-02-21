@@ -1,0 +1,32 @@
+<%= form_with(model: token_transaction) do |form| %>
+  <% if token_transaction.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(token_transaction.errors.count, "error") %> prohibited this token_transaction from being saved:</h2>
+
+      <ul>
+        <% token_transaction.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :child_id, style: "display: block" %>
+    <%= form.text_field :child_id %>
+  </div>
+
+  <div>
+    <%= form.label :amount, style: "display: block" %>
+    <%= form.number_field :amount %>
+  </div>
+
+  <div>
+    <%= form.label :description, style: "display: block" %>
+    <%= form.text_field :description %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>
