@@ -26,8 +26,14 @@ gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
 
+# Icon library for Tailwind
+gem 'heroicons'
+
 # Authentication
 gem 'devise'
+
+# Tailwind CSS
+gem 'tailwindcss-rails', '~> 3.1'
 # Use Redis adapter to run Action Cable in production
 # gem "redis", ">= 4.0.1"
 

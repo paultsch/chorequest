@@ -1,19 +1,91 @@
-<div class="card">
-  <h1>Welcome to ChoreQuest</h1>
-  <p>A family-friendly chores & rewards app.</p>
+<div class="space-y-12">
+  <!-- Hero Section -->
+  <div class="text-center py-12">
+    <div class="inline-block mb-4">
+      <div class="w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-lg">CQ</div>
+    </div>
+    <h1 class="text-5xl md:text-6xl font-bold text-gray-800 mb-4">ChoreQuest</h1>
+    <p class="text-xl text-gray-600 mb-8">Turn chores into an adventure! 🚀</p>
+    
+    <% if !parent_signed_in? && !session[:child_id] %>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <%= link_to 'Parent Login', new_parent_session_path, class: "px-8 py-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 font-bold text-lg shadow-lg transition-all transform hover:scale-105" %>
+        <%= link_to 'Child Login', new_child_session_path, class: "px-8 py-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 font-bold text-lg shadow-lg transition-all transform hover:scale-105" %>
+      </div>
+    <% end %>
+  </div>
 
-  <p>
-    <%= link_to 'Parent Sign In', new_parent_session_path, class: 'button' %>
-    <%= link_to 'Child Sign In', new_child_session_path, class: 'button' %>
-    <%= link_to 'Games', games_path, class: 'button' %>
-  </p>
+  <% if parent_signed_in? %>
+    <!-- Parent Dashboard Shortcuts -->
+    <div>
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <%= link_to new_chore_path, class: "card bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
+          <div class="text-4xl mb-3">➕</div>
+          <h3 class="font-bold text-gray-800 mb-1">New Chore</h3>
+          <p class="text-sm text-gray-600">Create a new chore template</p>
+        <% end %>
+        
+        <%= link_to new_chore_assignment_path, class: "card bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
+          <div class="text-4xl mb-3">📋</div>
+          <h3 class="font-bold text-gray-800 mb-1">Assign Chore</h3>
+          <p class="text-sm text-gray-600">Assign a chore to a child</p>
+        <% end %>
+        
+        <%= link_to children_path, class: "card bg-gradient-to-br from-pink-50 to-pink-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
+          <div class="text-4xl mb-3">👶</div>
+          <h3 class="font-bold text-gray-800 mb-1">Manage Children</h3>
+          <p class="text-sm text-gray-600">Add and manage your kids</p>
+        <% end %>
+        
+        <%= link_to admin_root_path, class: "card bg-gradient-to-br from-orange-50 to-orange-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
+          <div class="text-4xl mb-3">📊</div>
+          <h3 class="font-bold text-gray-800 mb-1">Dashboard</h3>
+          <p class="text-sm text-gray-600">View family overview</p>
+        <% end %>
+      </div>
+    </div>
+  <% elsif session[:child_id] %>
+    <!-- Child View -->
+    <% child = Child.find(session[:child_id]) %>
+    <div class="card bg-gradient-to-br from-green-50 to-green-100">
+      <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome, <%= child.name %>! 🎉</h2>
+      <p class="text-gray-600 mb-6">Here's what you can do:</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <%= link_to child_path(child), class: "card bg-white hover:shadow-lg cursor-pointer p-4" do %>
+          <div class="text-3xl mb-2">🏠</div>
+          <h3 class="font-bold text-gray-800">My Chores</h3>
+          <p class="text-sm text-gray-600">See today's chores</p>
+        <% end %>
+        
+        <%= link_to games_path, class: "card bg-white hover:shadow-lg cursor-pointer p-4" do %>
+          <div class="text-3xl mb-2">🎮</div>
+          <h3 class="font-bold text-gray-800">Play Games</h3>
+          <p class="text-sm text-gray-600">Spend your tokens</p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
-  <section class="card">
-    <h2>Quick Links</h2>
-    <ul>
-      <li><%= link_to 'Children', children_path %></li>
-      <li><%= link_to 'Chores', chores_path %></li>
-      <li><%= link_to 'Chore Assignments', chore_assignments_path %></li>
-    </ul>
-  </section>
+  <!-- Features Section -->
+  <div class="bg-white rounded-2xl shadow-md p-8 md:p-12">
+    <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Why ChoreQuest?</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="text-center">
+        <div class="text-5xl mb-4">✅</div>
+        <h3 class="font-bold text-lg text-gray-800 mb-2">Track Chores</h3>
+        <p class="text-gray-600">Keep track of what needs to be done and reward completion</p>
+      </div>
+      <div class="text-center">
+        <div class="text-5xl mb-4">💰</div>
+        <h3 class="font-bold text-lg text-gray-800 mb-2">Earn Tokens</h3>
+        <p class="text-gray-600">Kids earn tokens for completing chores</p>
+      </div>
+      <div class="text-center">
+        <div class="text-5xl mb-4">🎮</div>
+        <h3 class="font-bold text-lg text-gray-800 mb-2">Play Games</h3>
+        <p class="text-gray-600">Spend tokens playing fun games and activities</p>
+      </div>
+    </div>
+  </div>
 </div>

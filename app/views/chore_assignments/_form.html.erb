@@ -13,17 +13,17 @@
 
   <div>
     <%= form.label :child_id, style: "display: block" %>
-    <%= form.text_field :child_id %>
+    <%= form.select :child_id, options_from_collection_for_select(Child.all, :id, :name, chore_assignment.child_id), { prompt: 'Select a child' } %>
   </div>
 
   <div>
     <%= form.label :chore_id, style: "display: block" %>
-    <%= form.text_field :chore_id %>
+    <%= form.select :chore_id, options_from_collection_for_select(Chore.all, :id, :name, chore_assignment.chore_id), { prompt: 'Select a chore' } %>
   </div>
 
   <div>
     <%= form.label :day, style: "display: block" %>
-    <%= form.text_field :day %>
+    <%= form.select :day, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], { prompt: 'Select a day' } %>
   </div>
 
   <div>

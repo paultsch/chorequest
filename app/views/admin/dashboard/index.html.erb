@@ -1,30 +1,186 @@
-<h1>Admin Dashboard</h1>
+<div class="space-y-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold text-gray-800 mb-2">Welcome back, <%= current_parent.name %>! 👋</h1>
+    <p class="text-gray-600">Here's what's happening with your family today</p>
+  </div>
 
-<h2>Children</h2>
-<ul>
-  <% @children.each do |child| %>
-    <li><%= link_to child.name, child_path(child) %> — tokens: <%= child.token_balance %></li>
-  <% end %>
-</ul>
+  <!-- Quick Stats Row -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
+      <div class="text-blue-600 text-3xl mb-2">👶</div>
+      <p class="text-gray-600 text-sm">Total Children</p>
+      <p class="text-3xl font-bold text-gray-800"><%= @children.count %></p>
+    </div>
+    
+    <div class="card bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
+      <div class="text-purple-600 text-3xl mb-2">✓</div>
+      <p class="text-gray-600 text-sm">Chores Today</p>
+      <p class="text-3xl font-bold text-gray-800"><%= @chore_assignments_today.count %></p>
+    </div>
+    
+    <div class="card bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
+      <div class="text-green-600 text-3xl mb-2">⏳</div>
+      <p class="text-gray-600 text-sm">Pending Approval</p>
+      <p class="text-3xl font-bold text-gray-800"><%= @chore_assignments_today.where(completed: true, approved: false).count %></p>
+    </div>
+    
+    <div class="card bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500">
+      <div class="text-orange-600 text-3xl mb-2">💰</div>
+      <p class="text-gray-600 text-sm">Total Tokens</p>
+      <p class="text-3xl font-bold text-gray-800"><%= @children.sum { |c| c.token_balance } %></p>
+    </div>
+  </div>
 
-<h2>Today's Chores</h2>
-<table>
-  <thead>
-    <tr><th>Child</th><th>Chore</th><th>Completed</th><th>Approved</th><th>Actions</th></tr>
-  </thead>
-  <tbody>
-    <% @chore_assignments_today.each do |ca| %>
-      <tr>
-        <td><%= ca.child.name %></td>
-        <td><%= ca.chore.name %></td>
-        <td><%= ca.completed %></td>
-        <td><%= ca.approved %></td>
-        <td>
-          <% unless ca.approved %>
-            <%= button_to 'Approve', chore_assignment_path(ca, chore_assignment: { approved: true }), method: :patch %>
-          <% end %>
-        </td>
-      </tr>
+  <!-- Section 1: Approval Queue -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <span class="text-2xl">⏳</span> Chores Awaiting Approval
+      </h2>
+      <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold"><%= @chore_assignments_today.where(completed: true, approved: false).count %> pending</span>
+    </div>
+    
+    <% if @chore_assignments_today.where(completed: true, approved: false).count > 0 %>
+      <div class="space-y-3">
+        <% @chore_assignments_today.where(completed: true, approved: false).each do |ca| %>
+          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg">
+            <div class="flex-1">
+              <p class="font-semibold text-gray-800"><%= ca.child.name %></p>
+              <p class="text-gray-600 text-sm"><%= ca.chore.name %></p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold"><%= ca.chore.token_amount %> tokens</span>
+              <%= button_to edit_chore_assignment_path(ca), method: :get, class: "px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 font-semibold transition-all text-sm" do %>
+                ✓ Approve
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-gray-600 text-center py-8">🎉 All chores approved! Great job!</p>
     <% end %>
-  </tbody>
-</table>
+  </div>
+
+  <!-- Section 2: Today's Chores Overview -->
+  <div class="card">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+      <span class="text-2xl">📋</span> Today's Chores
+    </h2>
+    
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b-2 border-gray-200">
+            <th class="text-left px-4 py-3 font-semibold text-gray-700">Child</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-700">Chore</th>
+            <th class="text-center px-4 py-3 font-semibold text-gray-700">Completed</th>
+            <th class="text-center px-4 py-3 font-semibold text-gray-700">Approved</th>
+            <th class="text-right px-4 py-3 font-semibold text-gray-700">Reward</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @chore_assignments_today.each do |ca| %>
+            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+              <td class="px-4 py-3 font-semibold text-gray-800">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-purple-200 rounded-full"></div>
+                  <%= ca.child.name %>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-gray-700"><%= ca.chore.name %></td>
+              <td class="px-4 py-3 text-center">
+                <% if ca.completed %>
+                  <span class="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">✓ Yes</span>
+                <% else %>
+                  <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">⧖ Pending</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-center">
+                <% if ca.approved %>
+                  <span class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">✓ Yes</span>
+                <% else %>
+                  <span class="inline-block bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold" >⧖ Awaiting</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <span class="inline-block bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-semibold"><%= ca.chore.token_amount %> 🪙</span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 3: Child Token Balances -->
+  <div class="card">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+      <span class="text-2xl">💰</span> Child Token Balances
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <% @children.each do |child| %>
+        <div class="card bg-gradient-to-br from-gray-50 to-white">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-purple-200 rounded-full"></div>
+              <div>
+                <p class="font-semibold text-gray-800"><%= child.name %></p>
+                <p class="text-sm text-gray-600">Age <%= child.age %></p>
+              </div>
+            </div>
+            <p class="text-3xl font-bold text-orange-600"><%= child.token_balance %></p>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <% max_tokens = 100 %>
+            <% progress = (child.token_balance.to_f / max_tokens) * 100 %>
+            <div class="bg-gradient-to-r from-orange-400 to-orange-600 h-full" style="width: <%= [progress, 100].min %>%"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-2"><%= child.token_balance %> / 100 tokens</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Section 4: Weekly Overview -->
+  <div class="card">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+      <span class="text-2xl">📅</span> Weekly Overview
+    </h2>
+    
+    <div class="space-y-3">
+      <% days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %>
+      <% days.each do |day| %>
+        <% day_assignments = ChoreAssignment.where(day: day) %>
+        <% completed_count = day_assignments.where(completed: true).count %>
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <div class="flex-1">
+            <p class="font-semibold text-gray-800"><%= day %></p>
+            <p class="text-sm text-gray-600"><%= day_assignments.count %> chores assigned</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-center">
+              <p class="text-2xl font-bold text-green-600"><%= completed_count %></p>
+              <p class="text-xs text-gray-600">completed</p>
+            </div>
+            <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+              <% if day_assignments.count > 0 %>
+                <p class="text-sm font-bold text-blue-600"><%= ((completed_count.to_f / day_assignments.count) * 100).to_i %>%</p>
+              <% else %>
+                <p class="text-sm font-bold text-gray-400">-</p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex gap-4 justify-center">
+    <%= link_to '+ New Chore Assignment', new_chore_assignment_path, class: "px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-semibold transition-all" %>
+    <%= link_to '+ New Chore', new_chore_path, class: "px-6 py-3 rounded-lg bg-purple-500 text-white hover:bg-purple-600 font-semibold transition-all" %>
+  </div>
+</div>
