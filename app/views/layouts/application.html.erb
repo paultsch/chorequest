@@ -42,7 +42,7 @@
               <%= button_to destroy_parent_session_path, method: :delete, class: "px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" do %>Sign Out<% end %>
             </div>
             <!-- Mobile menu content (rendered when hamburger toggled) -->
-            <div data-nav-target="menu" class="md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
+            <div data-nav-target="menu" class="hidden md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
               <div class="px-6 py-4 space-y-2">
                 <%= link_to admin_root_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Dashboard<% end %>
                 <%= link_to children_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Children<% end %>
@@ -64,7 +64,7 @@
             <div class="hidden md:inline">
               <%= link_to destroy_child_session_path, method: :delete, class: "px-6 py-2 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold text-lg transition-all duration-200 shadow-sm" do %>Sign Out<% end %>
             </div>
-            <div data-nav-target="menu" class="md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
+            <div data-nav-target="menu" class="hidden md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
               <div class="px-6 py-4 space-y-2">
                 <%= link_to child_path(child), class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Home<% end %>
                 <%= link_to games_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Games<% end %>
@@ -82,7 +82,7 @@
             </div>
             <%= link_to "Parent Login", new_parent_session_path, class: "hidden md:inline px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" %>
             <%= link_to "Child Login", new_child_session_path, class: "hidden md:inline px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" %>
-            <div data-nav-target="menu" class="md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
+            <div data-nav-target="menu" class="hidden md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
               <div class="px-6 py-4 space-y-2">
                 <a href="#features" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-50">Features</a>
                 <a href="#pricing" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-50">Pricing</a>
