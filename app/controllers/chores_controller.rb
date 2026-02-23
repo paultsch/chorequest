@@ -3,7 +3,13 @@ class ChoresController < ApplicationController
 
   # GET /chores or /chores.json
   def index
-    @chores = Chore.all
+    # Sorting: only allow name and token_amount for safety
+    allowed_sorts = %w[name token_amount]
+    sort_col = allowed_sorts.include?(params[:sort]) ? params[:sort] : 'name'
+    sort_dir = params[:direction] == 'desc' ? :desc : :asc
+
+    @chores = Chore.includes(:chore_assignments)
+                   .order(sort_col => sort_dir)
   end
 
   # GET /chores/1 or /chores/1.json

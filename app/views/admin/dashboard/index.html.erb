@@ -38,26 +38,49 @@
       <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
         <span class="text-2xl">⏳</span> Chores Awaiting Approval
       </h2>
-      <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold"><%= @chore_assignments_today.where(completed: true, approved: false).count %> pending</span>
+      <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold"><%= @pending_approvals.count %> pending</span>
     </div>
-    
-    <% if @chore_assignments_today.where(completed: true, approved: false).count > 0 %>
-      <div class="space-y-3">
-        <% @chore_assignments_today.where(completed: true, approved: false).each do |ca| %>
-          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg">
-            <div class="flex-1">
-              <p class="font-semibold text-gray-800"><%= ca.child.name %></p>
-              <p class="text-gray-600 text-sm"><%= ca.chore.name %></p>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold"><%= ca.chore.token_amount %> tokens</span>
-              <%= button_to edit_chore_assignment_path(ca), method: :get, class: "px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 font-semibold transition-all text-sm" do %>
-                ✓ Approve
+
+    <% if @pending_approvals.any? %>
+      <%= form_with url: bulk_update_chore_assignments_path, method: :post do %>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b-2 border-gray-200">
+                <th class="px-4 py-2"><input type="checkbox" id="select_all_pending" /></th>
+                <th class="text-left px-4 py-2 font-semibold">Child</th>
+                <th class="text-left px-4 py-2 font-semibold">Chore</th>
+                <th class="text-left px-4 py-2 font-semibold">Scheduled</th>
+                <th class="text-left px-4 py-2 font-semibold">Completed</th>
+                <th class="text-right px-4 py-2 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @pending_approvals.each do |ca| %>
+                <tr class="border-b hover:bg-gray-50">
+                  <td class="px-4 py-2"><input type="checkbox" name="assignment_ids[]" value="<%= ca.id %>" class="pending_checkbox" /></td>
+                  <td class="px-4 py-2"><%= ca.child.name %></td>
+                  <td class="px-4 py-2"><%= ca.chore.name %></td>
+                  <td class="px-4 py-2"><%= ca.scheduled_on.present? ? l(ca.scheduled_on, format: :long) : '&mdash;'.html_safe %></td>
+                  <td class="px-4 py-2"><%= ca.completed_at.present? ? l(ca.completed_at, format: :long) : l(ca.updated_at, format: :long) %></td>
+                  <td class="px-4 py-2 text-right">
+                    <%= button_to approve_chore_assignment_path(ca), method: :post, class: 'px-3 py-1 rounded bg-green-500 text-white text-sm mr-2' do %>Approve<% end %>
+                    <%= button_to reject_chore_assignment_path(ca), method: :post, class: 'px-3 py-1 rounded bg-red-500 text-white text-sm' do %>Reject<% end %>
+                  </td>
+                </tr>
               <% end %>
-            </div>
-          </div>
-        <% end %>
-      </div>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 flex items-center gap-3">
+          <select name="bulk_action" class="px-3 py-2 border rounded">
+            <option value="approve">Approve selected</option>
+            <option value="delete">Delete selected</option>
+          </select>
+          <%= submit_tag 'Apply', class: 'px-4 py-2 bg-blue-600 text-white rounded' %>
+        </div>
+      <% end %>
     <% else %>
       <p class="text-gray-600 text-center py-8">🎉 All chores approved! Great job!</p>
     <% end %>

@@ -5,6 +5,8 @@ module Admin
 
     def index
       @children = Child.includes(:chore_assignments).all
+      # Pending approvals: completed by child but not yet approved by parent
+      @pending_approvals = ChoreAssignment.includes(:child, :chore).where(completed: true, approved: false).order(created_at: :desc)
       @chore_assignments_today = ChoreAssignment.where(day: Date.today.strftime('%A'))
     end
 

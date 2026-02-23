@@ -1,9 +1,8 @@
-<%= form_with(model: chore_assignment) do |form| %>
+<%= form_with(model: chore_assignment, local: true, class: 'space-y-6') do |form| %>
   <% if chore_assignment.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(chore_assignment.errors.count, "error") %> prohibited this chore_assignment from being saved:</h2>
-
-      <ul>
+    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
+      <h2 class="font-semibold"><%= pluralize(chore_assignment.errors.count, "error") %> prohibited this chore_assignment from being saved:</h2>
+      <ul class="mt-2 list-disc list-inside text-sm text-red-700">
         <% chore_assignment.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -12,36 +11,54 @@
   <% end %>
 
   <div>
-    <%= form.label :child_id, style: "display: block" %>
-    <%= form.select :child_id, options_from_collection_for_select(Child.all, :id, :name, chore_assignment.child_id), { prompt: 'Select a child' } %>
+    <%= form.label :child_id, class: 'label' %>
+    <%= form.collection_select :child_id, Child.all, :id, :name, { prompt: 'Select a child' }, { class: 'input-field' } %>
   </div>
 
   <div>
-    <%= form.label :chore_id, style: "display: block" %>
-    <%= form.select :chore_id, options_from_collection_for_select(Chore.all, :id, :name, chore_assignment.chore_id), { prompt: 'Select a chore' } %>
+    <%= form.label :chore_id, class: 'label' %>
+    <%= form.collection_select :chore_id, Chore.all, :id, :name, { prompt: 'Select a chore' }, { class: 'input-field' } %>
   </div>
 
   <div>
-    <%= form.label :day, style: "display: block" %>
-    <%= form.select :day, ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], { prompt: 'Select a day' } %>
+    <%= form.label :day, class: 'block text-sm font-medium text-gray-700' %>
+    <div class="mt-1">
+      <select id="assignment_mode" name="assignment_mode" class="block w-full px-3 py-2 border border-gray-300 rounded-md">
+        <option value="single">Single date</option>
+        <option value="range">Date range</option>
+      </select>
+    </div>
+
+    <div class="mt-3" id="dates_picker_container">
+      <label class="block text-sm font-medium text-gray-700">Pick date(s)</label>
+      <input type="text" id="dates_input" name="chore_assignment[dates_input]" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Select date or range">
+    </div>
   </div>
 
   <div>
-    <%= form.label :completed, style: "display: block" %>
-    <%= form.check_box :completed %>
-  </div>
-
-  <div>
-    <%= form.label :approved, style: "display: block" %>
-    <%= form.check_box :approved %>
-  </div>
-
-  <div>
-    <%= form.label :completion_photo, style: "display: block" %>
-    <%= form.text_field :completion_photo %>
-  </div>
-
-  <div>
-    <%= form.submit %>
+    <%= form.submit 'Create Assignment', class: 'w-full inline-flex items-center justify-center py-3 px-6 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500' %>
   </div>
 <% end %>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script>
+  (function(){
+    const modeSelect = document.getElementById('assignment_mode');
+    const datesInput = document.getElementById('dates_input');
+
+    let fp = flatpickr(datesInput, { mode: 'single', dateFormat: 'Y-m-d' });
+
+    function updateMode(){
+      const mode = modeSelect.value;
+      if(mode === 'single'){
+        fp.set('mode','single');
+      } else if(mode === 'range'){
+        fp.set('mode','range');
+      }
+    }
+
+    modeSelect.addEventListener('change', updateMode);
+    updateMode();
+  })();
+</script>

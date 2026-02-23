@@ -1,9 +1,8 @@
-<%= form_with(model: child) do |form| %>
+<%= form_with(model: child, local: true, class: 'space-y-6') do |form| %>
   <% if child.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(child.errors.count, "error") %> prohibited this child from being saved:</h2>
-
-      <ul>
+    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
+      <h2 class="font-semibold"><%= pluralize(child.errors.count, "error") %> prohibited this child from being saved:</h2>
+      <ul class="mt-2 list-disc list-inside text-sm text-red-700">
         <% child.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -12,26 +11,26 @@
   <% end %>
 
   <div>
-    <%= form.label :name, style: "display: block" %>
-    <%= form.text_field :name %>
+    <%= form.label :name, class: 'label' %>
+    <%= form.text_field :name, class: 'input-field' %>
   </div>
 
   <div>
-    <%= form.label :age, style: "display: block" %>
-    <%= form.number_field :age %>
+    <%= form.label :age, class: 'label' %>
+    <%= form.number_field :age, class: 'input-field' %>
   </div>
 
   <div>
-    <%= form.label :parent_id, style: "display: block" %>
-    <%= form.text_field :parent_id %>
+    <%= form.label :parent_id, class: 'label' %>
+    <%= form.collection_select :parent_id, Parent.all, :id, :name, { prompt: 'Select parent' }, { class: 'input-field' } %>
   </div>
 
   <div>
-    <%= form.label :pin_code, style: "display: block" %>
-    <%= form.text_field :pin_code %>
+    <%= form.label :pin_code, class: 'label' %>
+    <%= form.password_field :pin_code, class: 'input-field' %>
   </div>
 
   <div>
-    <%= form.submit %>
+    <%= form.submit class: 'btn btn-primary' %>
   </div>
 <% end %>

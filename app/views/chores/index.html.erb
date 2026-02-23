@@ -1,14 +1,63 @@
-<p style="color: green"><%= notice %></p>
+<% if notice %>
+  <div class="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded mb-4"><%= notice %></div>
+<% end %>
 
-<h1>Chores</h1>
-
-<div id="chores">
-  <% @chores.each do |chore| %>
-    <%= render chore %>
-    <p>
-      <%= link_to "Show this chore", chore %>
-    </p>
-  <% end %>
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold">Chores</h1>
+  <div class="flex items-center gap-3">
+    <%= link_to 'New chore', new_chore_path, class: 'btn btn-primary' %>
+  </div>
 </div>
 
-<%= link_to "New chore", new_chore_path %>
+<table class="min-w-full bg-white border">
+  <thead>
+    <tr>
+      <th class="px-4 py-2 text-left">Name
+        <%= link_to '↕', chores_path(sort: 'name', direction: (params[:sort] == 'name' && params[:direction] == 'desc') ? 'asc' : 'desc'), class: 'ml-2 text-sm text-gray-500' %>
+      </th>
+      <th class="px-4 py-2 text-left">Description</th>
+      <th class="px-4 py-2 text-left">Definition of done</th>
+      <th class="px-4 py-2 text-left">Token amount
+        <%= link_to '↕', chores_path(sort: 'token_amount', direction: (params[:sort] == 'token_amount' && params[:direction] == 'desc') ? 'asc' : 'desc'), class: 'ml-2 text-sm text-gray-500' %>
+      </th>
+      <th class="px-4 py-2 text-left">Recurrence</th>
+      <th class="px-4 py-2 text-left"># Assignments</th>
+      <th class="px-4 py-2 text-left">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @chores.each do |chore| %>
+      <tr class="border-t">
+        <td class="px-4 py-3"><%= chore.name %></td>
+        <td class="px-4 py-3 text-sm text-gray-600"><%= truncate(chore.description.to_s, length: 120) %></td>
+        <td class="px-4 py-3 text-sm text-gray-600"><%= truncate(chore.definition_of_done.to_s, length: 120) %></td>
+        <td class="px-4 py-3">
+          <% if current_parent %>
+            <%= form_with model: chore, url: chore_path(chore), method: :patch, local: true do |f| %>
+              <div class="flex items-center gap-2">
+                <%= f.number_field :token_amount, value: chore.token_amount, class: 'w-20 p-1 border rounded' %>
+                <%= f.submit 'Save', class: 'btn btn-sm' %>
+              </div>
+            <% end %>
+          <% else %>
+            <%= chore.token_amount %>
+          <% end %>
+        </td>
+        <td class="px-4 py-3"><%= chore.recurrence %></td>
+        <td class="px-4 py-3"><%= chore.chore_assignments.size %></td>
+        <td class="px-4 py-3">
+          <% if current_parent %>
+            <div class="flex items-center gap-2">
+              <%= link_to 'View', chore_path(chore), class: 'btn btn-secondary btn-sm' %>
+              <%= link_to 'Edit', edit_chore_path(chore), class: 'btn btn-sm' %>
+              <%= button_to 'Delete', chore_path(chore), method: :delete, data: { confirm: 'Delete this chore?' }, class: 'btn btn-danger btn-sm' %>
+              <%= link_to 'Assign', new_chore_assignment_path(chore_id: chore.id), class: 'btn btn-outline btn-sm' %>
+            </div>
+          <% else %>
+            <%= link_to 'View', chore_path(chore), class: 'text-sm text-indigo-600' %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

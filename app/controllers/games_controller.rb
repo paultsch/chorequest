@@ -3,7 +3,12 @@ class GamesController < ApplicationController
 
   # GET /games or /games.json
   def index
-    @games = Game.all
+    # Sorting: allow name and token_per_minute
+    allowed = %w[name token_per_minute]
+    sort = allowed.include?(params[:sort]) ? params[:sort] : 'name'
+    dir = params[:direction] == 'desc' ? :desc : :asc
+
+    @games = Game.order(sort => dir)
   end
 
   # GET /games/1 or /games/1.json

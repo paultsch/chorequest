@@ -1,14 +1,122 @@
-<p style="color: green"><%= notice %></p>
+<% if notice %>
+  <div class="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded mb-4"><%= notice %></div>
+<% end %>
 
-<h1>Chore assignments</h1>
-
-<div id="chore_assignments">
-  <% @chore_assignments.each do |chore_assignment| %>
-    <%= render chore_assignment %>
-    <p>
-      <%= link_to "Show this chore assignment", chore_assignment %>
-    </p>
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold">Chore assignments</h1>
+  <% if current_parent %>
+    <div>
+      <%= link_to 'New chore assignment', new_chore_assignment_path, class: 'btn btn-primary', id: 'new-assignment-btn' %>
+    </div>
   <% end %>
 </div>
 
-<%= link_to "New chore assignment", new_chore_assignment_path %>
+<div class="mb-4">
+  <div class="flex gap-2 overflow-x-auto py-2">
+    <% @assignments_by_child.keys.each_with_index do |child, idx| %>
+      <button data-child-id="<%= child.id %>" data-assignments="<%= (child.chore_assignments.map { |a| a.scheduled_on }.compact.map { |d| d.iso8601 }).to_json %>" class="child-pill px-4 py-2 rounded-full border <%= idx==0 ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700' %>">
+        <%= child.name %>
+      </button>
+    <% end %>
+  </div>
+
+  <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div>
+      <div id="calendar_container" class="bg-white p-4 rounded-lg shadow border">
+        <div id="calendar" data-default-child-id="<%= @assignments_by_child.keys.first&.id %>"></div>
+      </div>
+    </div>
+    <div>
+      <div id="assignment_list" class="bg-white p-4 rounded-lg shadow border">
+        <h3 class="text-lg font-medium mb-2">Assignments</h3>
+        <div id="assignments_items">Select a child to view assignments.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  (function(){
+    const pills = document.querySelectorAll('.child-pill');
+    const calendarEl = document.getElementById('calendar');
+    const assignmentsItems = document.getElementById('assignments_items');
+    const newBtn = document.getElementById('new-assignment-btn');
+
+    let fp = flatpickr(calendarEl, { inline: true, mode: 'single', dateFormat: 'Y-m-d' });
+
+    function renderAssignments(childId, datesJson){
+      const dates = JSON.parse(datesJson || '[]');
+      // mark dates in calendar
+      setTimeout(()=>{
+        const days = fp.calendarContainer.querySelectorAll('.flatpickr-day');
+        days.forEach(d => {
+          d.classList.remove('bg-indigo-200','text-white');
+          if(d.dateObj){
+            const ds = d.dateObj.toISOString().slice(0,10);
+            if(dates.includes(ds)){
+              d.classList.add('bg-indigo-200');
+            }
+          }
+        });
+      },50);
+
+      assignmentsItems.innerHTML = '<div class="text-sm text-gray-600">'+dates.length+' scheduled date(s)</div>';
+
+      if(newBtn){
+        newBtn.href = '/chore_assignments/new?child_id=' + childId;
+      }
+    }
+
+    pills.forEach(p => p.addEventListener('click', function(){
+      pills.forEach(x => { x.classList.remove('bg-indigo-600','text-white'); x.classList.add('bg-white','text-gray-700'); });
+      this.classList.remove('bg-white','text-gray-700'); this.classList.add('bg-indigo-600','text-white');
+      renderAssignments(this.dataset.childId, this.dataset.assignments);
+    }));
+
+    const first = document.querySelector('.child-pill');
+    if(first){ renderAssignments(first.dataset.childId, first.dataset.assignments); }
+  })();
+</script>
+
+<div class="mt-8 bg-white p-4 rounded-lg shadow border">
+  <h2 class="text-xl font-semibold mb-3">All Chore Assignments</h2>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Child</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chore</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scheduled On</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <% ChoreAssignment.includes(:child, :chore).order(scheduled_on: :desc, id: :desc).each do |assignment| %>
+          <tr>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= assignment.id %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= link_to(assignment.child&.name || assignment.child_id, child_path(assignment.child)) if assignment.child %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= assignment.chore&.name || assignment.chore_id %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= assignment.scheduled_on ? assignment.scheduled_on.strftime('%F') : '&mdash;'.html_safe %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= assignment.respond_to?(:approved) ? (assignment.approved ? 'Yes' : 'No') : '&mdash;' %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= assignment.respond_to?(:completed) ? (assignment.completed ? 'Yes' : 'No') : '&mdash;' %></td>
+            <td class="px-4 py-2 text-sm text-gray-700"><%= assignment.created_at ? assignment.created_at.strftime('%F %T') : '&mdash;' %></td>
+            <td class="px-4 py-2 text-sm text-gray-700">
+              <% if current_parent %>
+                <%= link_to 'Edit', edit_chore_assignment_path(assignment), class: 'text-indigo-600 hover:text-indigo-900 mr-3' %>
+                <%= link_to 'Delete', chore_assignment_path(assignment), method: :delete, data: { confirm: 'Delete this assignment?' }, class: 'text-red-600 hover:text-red-900' %>
+              <% else %>
+                &mdash;
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

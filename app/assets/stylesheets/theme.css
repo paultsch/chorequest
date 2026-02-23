@@ -1,29 +1,10 @@
-/* Kid-friendly colorful theme */
-body {
-  font-family: 'Comic Sans MS', 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(135deg, #ffefba 0%, #ffd3a5 100%);
-  color: #333;
-  padding: 20px;
-}
+/* Legacy theme disabled — Tailwind will provide global styles. */
+/* If you need scoped legacy styles, add utility classes instead. */
 
-h1, h2, h3 { color: #2b6cb0 }
-
-.card {
-  background: white;
+/* Example: use `.legacy-card` only when intentionally needed */
+.legacy-card {
+  background: #fff;
   border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  padding: 16px;
-  margin-bottom: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  padding: 1rem;
 }
-
-button, input[type="submit"] {
-  background: #ff7b7b;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-table { width: 100%; border-collapse: collapse }
-table th, table td { padding: 8px; border-bottom: 1px solid #eee }

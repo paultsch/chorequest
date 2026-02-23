@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_21_195900) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_22_152000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -21,7 +21,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_21_195900) do
     t.string "pin_code"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "public_token"
     t.index ["parent_id"], name: "index_children_on_parent_id"
+    t.index ["public_token"], name: "index_children_on_public_token", unique: true
   end
 
   create_table "chore_assignments", force: :cascade do |t|
@@ -33,8 +35,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_21_195900) do
     t.string "completion_photo"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "scheduled_on"
+    t.text "extra_dates"
+    t.datetime "completed_at"
+    t.index ["child_id", "chore_id", "scheduled_on"], name: "index_chore_assignments_on_child_chore_scheduled_on", unique: true
     t.index ["child_id"], name: "index_chore_assignments_on_child_id"
     t.index ["chore_id"], name: "index_chore_assignments_on_chore_id"
+    t.index ["completed_at"], name: "index_chore_assignments_on_completed_at"
+    t.index ["scheduled_on"], name: "index_chore_assignments_on_scheduled_on"
   end
 
   create_table "chores", force: :cascade do |t|
@@ -55,8 +63,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_21_195900) do
     t.datetime "ended_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "last_heartbeat"
+    t.boolean "stopped_early", default: false, null: false
     t.index ["child_id"], name: "index_game_sessions_on_child_id"
     t.index ["game_id"], name: "index_game_sessions_on_game_id"
+    t.index ["last_heartbeat"], name: "index_game_sessions_on_last_heartbeat"
   end
 
   create_table "games", force: :cascade do |t|
@@ -90,6 +101,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_21_195900) do
     t.integer "failed_attempts", default: 0, null: false
     t.string "unlock_token"
     t.datetime "locked_at"
+    t.string "display_name"
+    t.string "phone"
+    t.boolean "accepted_terms", default: false, null: false
     t.index ["confirmation_token"], name: "index_parents_on_confirmation_token", unique: true
     t.index ["email"], name: "index_parents_on_email", unique: true
     t.index ["reset_password_token"], name: "index_parents_on_reset_password_token", unique: true

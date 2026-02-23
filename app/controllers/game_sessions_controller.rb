@@ -1,5 +1,6 @@
 class GameSessionsController < ApplicationController
-  before_action :set_game_session, only: %i[ show edit update destroy ]
+  before_action :set_game_session, only: %i[ show edit update destroy heartbeat stop ]
+  skip_before_action :verify_authenticity_token, only: %i[ heartbeat stop ]
 
   # GET /game_sessions or /game_sessions.json
   def index
@@ -37,6 +38,8 @@ class GameSessionsController < ApplicationController
 
     respond_to do |format|
       if @game_session.save
+        # initialize heartbeat
+        @game_session.update_column(:last_heartbeat, Time.current)
         format.html { redirect_to @game_session, notice: "Game session was successfully created." }
         format.json { render :show, status: :created, location: @game_session }
       else
@@ -44,6 +47,55 @@ class GameSessionsController < ApplicationController
         format.json { render json: @game_session.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # POST /game_sessions/:id/heartbeat
+  def heartbeat
+    game = @game_session.game
+    child = @game_session.child
+    price_per_minute = (game&.token_per_minute || 1).to_i
+
+    last = @game_session.last_heartbeat || @game_session.started_at || Time.current
+    elapsed = Time.current - last
+    minutes = (elapsed / 60).floor
+
+    deducted = 0
+    ended = false
+    remaining = child.token_balance
+
+    if minutes > 0
+      # Use row-level locking on the child to avoid race conditions
+      child.with_lock do
+        remaining = child.token_balance
+        max_minutes = remaining / price_per_minute
+        use_minutes = [minutes, max_minutes].min
+        if use_minutes > 0
+          TokenTransaction.create!(child: child, amount: - (use_minutes * price_per_minute), description: "Game play deduction")
+          @game_session.duration_minutes = (@game_session.duration_minutes || 0) + use_minutes
+          deducted = use_minutes
+        end
+        if use_minutes < minutes || (child.reload.token_balance) <= 0
+          # end session due to insufficient tokens
+          @game_session.ended_at = Time.current
+          @game_session.stopped_early = true
+          ended = true
+        end
+        @game_session.last_heartbeat = Time.current
+        @game_session.save!
+        remaining = child.reload.token_balance
+      end
+    else
+      remaining = child.token_balance
+    end
+
+    render json: { ended: ended, deducted_minutes: deducted, remaining_tokens: remaining }
+  end
+
+  # POST /game_sessions/:id/stop
+  def stop
+    @game_session.ended_at ||= Time.current
+    @game_session.save!
+    render json: { stopped: true, duration_minutes: @game_session.duration_minutes }
   end
 
   # PATCH/PUT /game_sessions/1 or /game_sessions/1.json

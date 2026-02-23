@@ -14,34 +14,91 @@
 
   <body class="bg-gradient-to-br from-white via-blue-50 to-blue-100 min-h-screen font-sans">
     <!-- Wealthfront-Inspired Top Navigation -->
-    <nav class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 font-sans">
+    <%# Hide top navigation on public child pages (token-based public view) %>
+    <% unless controller.controller_name == 'public' %>
+    <nav data-controller="nav" class="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 font-sans">
       <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-8 py-6">
         <div class="flex items-center gap-4 mb-4 md:mb-0">
           <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-2xl shadow">CQ</div>
           <span class="text-3xl font-extrabold text-gray-900 tracking-tight">ChoreQuest</span>
         </div>
         <div class="flex items-center gap-4">
-          <a href="#features" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Features</a>
-          <a href="#pricing" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Pricing</a>
-          <a href="#about" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">About</a>
+          <!-- Mobile hamburger -->
+          <button data-action="click->nav#toggle" data-nav-target="button" aria-expanded="false" class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
           <% if parent_signed_in? %>
-            <span class="text-gray-700 font-medium"><%= current_parent.name %></span>
-            <%= button_to destroy_parent_session_path, method: :delete, class: "px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" do %>
-              Sign Out
-            <% end %>
+            <div class="hidden md:flex md:items-center md:gap-4">
+              <%= link_to admin_root_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Dashboard<% end %>
+              <%= link_to children_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Children<% end %>
+              <%= link_to chores_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Chores<% end %>
+              <%= link_to chore_assignments_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Assignments<% end %>
+              <%= link_to token_transactions_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Tokens<% end %>
+              <%= link_to games_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Games<% end %>
+              <%= link_to edit_parent_path(current_parent), class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Settings<% end %>
+            </div>
+            <span class="hidden md:inline text-gray-700 font-medium"><%= current_parent.name %></span>
+            <div class="hidden md:inline">
+              <%= button_to destroy_parent_session_path, method: :delete, class: "px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" do %>Sign Out<% end %>
+            </div>
+            <!-- Mobile menu content (rendered when hamburger toggled) -->
+            <div data-nav-target="menu" class="md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
+              <div class="px-6 py-4 space-y-2">
+                <%= link_to admin_root_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Dashboard<% end %>
+                <%= link_to children_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Children<% end %>
+                <%= link_to chores_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Chores<% end %>
+                <%= link_to chore_assignments_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Assignments<% end %>
+                <%= link_to token_transactions_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Tokens<% end %>
+                <%= link_to games_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Games<% end %>
+                <%= link_to edit_parent_path(current_parent), class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Settings<% end %>
+                <div class="pt-2"><%= button_to destroy_parent_session_path, method: :delete, class: 'w-full text-left px-3 py-2 rounded bg-blue-600 text-white' do %>Sign Out<% end %></div>
+              </div>
+            </div>
           <% elsif session[:child_id] %>
-            <span class="text-gray-700 font-medium"><%= Child.find(session[:child_id]).name %></span>
-            <%= link_to destroy_child_session_path, method: :delete, class: "px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" do %>
-              Sign Out
-            <% end %>
+            <% child = Child.find(session[:child_id]) %>
+            <div class="hidden md:flex md:items-center md:gap-4">
+              <%= link_to child_path(child), class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-600 font-semibold text-lg transition" do %>Home<% end %>
+              <%= link_to games_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-600 font-semibold text-lg transition" do %>Games<% end %>
+            </div>
+            <span class="hidden md:inline text-gray-700 font-medium"><%= child.name %></span>
+            <div class="hidden md:inline">
+              <%= link_to destroy_child_session_path, method: :delete, class: "px-6 py-2 rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200 font-semibold text-lg transition-all duration-200 shadow-sm" do %>Sign Out<% end %>
+            </div>
+            <div data-nav-target="menu" class="md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
+              <div class="px-6 py-4 space-y-2">
+                <%= link_to child_path(child), class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Home<% end %>
+                <%= link_to games_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Games<% end %>
+                <div class="pt-2"><%= link_to destroy_child_session_path, method: :delete, class: 'w-full text-left px-3 py-2 rounded bg-gray-100' do %>Sign Out<% end %></div>
+              </div>
+            </div>
           <% else %>
-            <%= link_to "Parent Login", new_parent_session_path, class: "px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" %>
-            <%= link_to "Child Login", new_child_session_path, class: "px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" %>
+            <div class="hidden md:flex md:items-center md:gap-4">
+              <a href="#features" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Features</a>
+              <a href="#pricing" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Pricing</a>
+              <%= link_to games_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Games<% end %>
+              <a href="#about" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">About</a>
+              <a href="#blog" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Blog</a>
+              <a href="#contact" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Contact</a>
+            </div>
+            <%= link_to "Parent Login", new_parent_session_path, class: "hidden md:inline px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" %>
+            <%= link_to "Child Login", new_child_session_path, class: "hidden md:inline px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" %>
+            <div data-nav-target="menu" class="md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
+              <div class="px-6 py-4 space-y-2">
+                <a href="#features" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-50">Features</a>
+                <a href="#pricing" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-50">Pricing</a>
+                <%= link_to games_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Games<% end %>
+                <a href="#about" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-50">About</a>
+                <a href="#blog" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-50">Blog</a>
+                <a href="#contact" class="block px-3 py-2 rounded text-gray-700 hover:bg-gray-50">Contact</a>
+                <div class="pt-2"><%= link_to new_parent_session_path, class: 'w-full text-left px-3 py-2 rounded bg-blue-600 text-white' do %>Parent Login<% end %></div>
+                <div><%= link_to new_child_session_path, class: 'w-full text-left px-3 py-2 rounded bg-blue-600 text-white' do %>Child Login<% end %></div>
+              </div>
+            </div>
           <% end %>
         </div>
       </div>
     </nav>
-
+    <% end %>
     <!-- Main Content -->
     <main class="min-h-[calc(100vh-64px)]">
       <div class="max-w-7xl mx-auto px-4 md:px-8 py-8">

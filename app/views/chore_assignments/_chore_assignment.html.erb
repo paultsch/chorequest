@@ -1,4 +1,4 @@
-<div id="<%= dom_id chore_assignment %>">
+<div id="<%= dom_id chore_assignment %>" class="space-y-1">
   <p>
     <strong>Child:</strong>
     <%= chore_assignment.child_id %>
@@ -11,22 +11,30 @@
 
   <p>
     <strong>Day:</strong>
-    <%= chore_assignment.day %>
+    <%# support legacy `day` and new `scheduled_on` if present %>
+    <% if chore_assignment.respond_to?(:scheduled_on) && chore_assignment.scheduled_on.present? %>
+      <%= l(chore_assignment.scheduled_on, format: :long) %>
+    <% else %>
+      <%= chore_assignment.day %>
+    <% end %>
   </p>
 
-  <p>
-    <strong>Completed:</strong>
-    <%= chore_assignment.completed %>
-  </p>
+  <% if chore_assignment.completed %>
+    <p>
+      <strong>Status:</strong>
+      <% if chore_assignment.approved.nil? %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Awaiting approval</span>
+      <% elsif chore_assignment.approved == true %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Approved</span>
+      <% end %>
+    </p>
+  <% end %>
 
-  <p>
-    <strong>Approved:</strong>
-    <%= chore_assignment.approved %>
-  </p>
-
-  <p>
-    <strong>Completion photo:</strong>
-    <%= chore_assignment.completion_photo %>
-  </p>
+  <% if chore_assignment.completion_photo.present? %>
+    <p>
+      <strong>Completion photo:</strong>
+      <%= chore_assignment.completion_photo %>
+    </p>
+  <% end %>
 
 </div>

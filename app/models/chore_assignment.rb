@@ -2,7 +2,10 @@ class ChoreAssignment < ApplicationRecord
   belongs_to :child
   belongs_to :chore
 
-  validates :day, presence: true
+  serialize :extra_dates, coder: JSON
+
+  validates :chore_id, :child_id, presence: true
+  validates :scheduled_on, uniqueness: { scope: [:child_id, :chore_id], message: 'An assignment for this child, chore and date already exists' }, allow_nil: true
 
   # When a parent approves a completed chore, grant tokens to the child
   after_update :grant_tokens_after_approval, if: :saved_change_to_approved?

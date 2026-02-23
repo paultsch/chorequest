@@ -1,19 +1,25 @@
-<div class="space-y-12">
-  <!-- Hero Section -->
-  <div class="text-center py-12">
-    <div class="inline-block mb-4">
-      <div class="w-20 h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-lg">CQ</div>
+<div class="space-y-16">
+  <!-- Wealthfront-Inspired Hero Section -->
+  <section class="relative text-center py-24 md:py-36 bg-gradient-to-br from-white via-blue-50 to-blue-100 rounded-3xl shadow-xl flex flex-col items-center font-sans">
+    <!-- SVG Illustration -->
+    <div class="mb-8">
+      <svg width="320" height="180" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="40" width="300" height="120" rx="24" fill="#F3F4F6"/>
+        <circle cx="60" cy="100" r="32" fill="#A5B4FC"/>
+        <circle cx="260" cy="100" r="32" fill="#FBBF24"/>
+        <rect x="120" y="80" width="80" height="40" rx="12" fill="#6EE7B7"/>
+        <text x="160" y="105" text-anchor="middle" font-size="24" fill="#374151" font-weight="bold">CQ</text>
+      </svg>
     </div>
-    <h1 class="text-5xl md:text-6xl font-bold text-gray-800 mb-4">ChoreQuest</h1>
-    <p class="text-xl text-gray-600 mb-8">Turn chores into an adventure! 🚀</p>
-    
+    <h1 class="text-7xl md:text-8xl font-extrabold text-gray-900 mb-8 tracking-tight leading-tight">Turn chores into an adventure</h1>
+    <p class="text-2xl md:text-3xl text-gray-700 mb-12">A modern family platform for rewarding responsibility.</p>
     <% if !parent_signed_in? && !session[:child_id] %>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <%= link_to 'Parent Login', new_parent_session_path, class: "px-8 py-4 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 font-bold text-lg shadow-lg transition-all transform hover:scale-105" %>
-        <%= link_to 'Child Login', new_child_session_path, class: "px-8 py-4 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 font-bold text-lg shadow-lg transition-all transform hover:scale-105" %>
+      <div class="flex flex-col sm:flex-row gap-8 justify-center">
+        <%= link_to 'Parent Login', new_parent_session_path, class: "px-12 py-5 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-bold text-2xl shadow-xl transition-all transform hover:scale-105" %>
+        <%= link_to 'Child Login', new_child_session_path, class: "px-12 py-5 rounded-full bg-gray-100 text-blue-700 hover:bg-gray-200 font-bold text-2xl shadow-xl transition-all transform hover:scale-105" %>
       </div>
     <% end %>
-  </div>
+  </section>
 
   <% if parent_signed_in? %>
     <!-- Parent Dashboard Shortcuts -->
@@ -21,25 +27,33 @@
       <h2 class="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <%= link_to new_chore_path, class: "card bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
-          <div class="text-4xl mb-3">➕</div>
+          <div class="mb-3">
+            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <h3 class="font-bold text-gray-800 mb-1">New Chore</h3>
           <p class="text-sm text-gray-600">Create a new chore template</p>
         <% end %>
         
         <%= link_to new_chore_assignment_path, class: "card bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
-          <div class="text-4xl mb-3">📋</div>
+          <div class="mb-3">
+            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 8h8M8 12h8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <h3 class="font-bold text-gray-800 mb-1">Assign Chore</h3>
           <p class="text-sm text-gray-600">Assign a chore to a child</p>
         <% end %>
         
         <%= link_to children_path, class: "card bg-gradient-to-br from-pink-50 to-pink-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
-          <div class="text-4xl mb-3">👶</div>
+          <div class="mb-3">
+            <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/><path d="M6 20c0-2.21 3.58-4 6-4s6 1.79 6 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <h3 class="font-bold text-gray-800 mb-1">Manage Children</h3>
           <p class="text-sm text-gray-600">Add and manage your kids</p>
         <% end %>
         
         <%= link_to admin_root_path, class: "card bg-gradient-to-br from-orange-50 to-orange-100 hover:shadow-lg cursor-pointer transition-all transform hover:scale-105" do %>
-          <div class="text-4xl mb-3">📊</div>
+          <div class="mb-3">
+            <svg class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 13v6M12 9v10M17 5v14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <h3 class="font-bold text-gray-800 mb-1">Dashboard</h3>
           <p class="text-sm text-gray-600">View family overview</p>
         <% end %>
@@ -49,17 +63,21 @@
     <!-- Child View -->
     <% child = Child.find(session[:child_id]) %>
     <div class="card bg-gradient-to-br from-green-50 to-green-100">
-      <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome, <%= child.name %>! 🎉</h2>
+      <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome, <%= child.name %>!</h2>
       <p class="text-gray-600 mb-6">Here's what you can do:</p>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <%= link_to child_path(child), class: "card bg-white hover:shadow-lg cursor-pointer p-4" do %>
-          <div class="text-3xl mb-2">🏠</div>
+          <div class="mb-2">
+            <svg class="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 11.5L12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-8.5z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <h3 class="font-bold text-gray-800">My Chores</h3>
           <p class="text-sm text-gray-600">See today's chores</p>
         <% end %>
         
         <%= link_to games_path, class: "card bg-white hover:shadow-lg cursor-pointer p-4" do %>
-          <div class="text-3xl mb-2">🎮</div>
+          <div class="mb-2">
+            <svg class="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M6 12v-2a4 4 0 014-4h4a4 4 0 014 4v2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="10" width="18" height="10" rx="2"/></svg>
+          </div>
           <h3 class="font-bold text-gray-800">Play Games</h3>
           <p class="text-sm text-gray-600">Spend your tokens</p>
         <% end %>
@@ -68,24 +86,30 @@
   <% end %>
 
   <!-- Features Section -->
-  <div class="bg-white rounded-2xl shadow-md p-8 md:p-12">
-    <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Why ChoreQuest?</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+  <section class="bg-white rounded-3xl shadow-xl p-12 md:p-16 mt-12 font-sans">
+    <h2 class="text-5xl font-extrabold text-gray-900 mb-12 text-center tracking-tight">Why families love ChoreQuest</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
       <div class="text-center">
-        <div class="text-5xl mb-4">✅</div>
-        <h3 class="font-bold text-lg text-gray-800 mb-2">Track Chores</h3>
-        <p class="text-gray-600">Keep track of what needs to be done and reward completion</p>
+        <div class="mx-auto mb-6 w-20 h-20 flex items-center justify-center bg-blue-100 rounded-full">
+          <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <h3 class="font-bold text-2xl text-gray-900 mb-2">Track Chores</h3>
+        <p class="text-gray-600">Keep track of what needs to be done and reward completion.</p>
       </div>
       <div class="text-center">
-        <div class="text-5xl mb-4">💰</div>
-        <h3 class="font-bold text-lg text-gray-800 mb-2">Earn Tokens</h3>
-        <p class="text-gray-600">Kids earn tokens for completing chores</p>
+        <div class="mx-auto mb-6 w-20 h-20 flex items-center justify-center bg-green-100 rounded-full">
+          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <h3 class="font-bold text-2xl text-gray-900 mb-2">Earn Tokens</h3>
+        <p class="text-gray-600">Kids earn tokens for completing chores.</p>
       </div>
       <div class="text-center">
-        <div class="text-5xl mb-4">🎮</div>
-        <h3 class="font-bold text-lg text-gray-800 mb-2">Play Games</h3>
-        <p class="text-gray-600">Spend tokens playing fun games and activities</p>
+        <div class="mx-auto mb-6 w-20 h-20 flex items-center justify-center bg-purple-100 rounded-full">
+          <svg class="w-12 h-12 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 8h8v8H8z"/></svg>
+        </div>
+        <h3 class="font-bold text-2xl text-gray-900 mb-2">Play Games</h3>
+        <p class="text-gray-600">Spend tokens playing fun games and activities.</p>
       </div>
     </div>
-  </div>
+  </section>
 </div>

@@ -1,14 +1,65 @@
-<p style="color: green"><%= notice %></p>
+<% if notice %>
+  <div class="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded mb-4"><%= notice %></div>
+<% end %>
 
-<h1>Children</h1>
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold">Children</h1>
+  <div class="flex items-center gap-3">
+    <%= link_to 'New child', new_child_path, class: 'btn btn-primary' %>
+    <%= link_to (params[:direction] == 'desc' ? 'Sort: Z → A' : 'Sort: A → Z'), children_path(direction: (params[:direction] == 'desc' ? 'asc' : 'desc')), class: 'text-sm text-gray-600' %>
+  </div>
+</div>
 
-<div id="children">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
   <% @children.each do |child| %>
-    <%= render child %>
-    <p>
-      <%= link_to "Show this child", child %>
-    </p>
+    <div class="p-4 bg-white rounded-lg shadow-sm border">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-lg font-medium text-gray-700">
+            <%= (child.name.to_s.strip[0] || '?').upcase %>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-gray-900"><%= child.name %></div>
+            <div class="text-sm text-gray-600">Age: <%= child.age %></div>
+            <div class="text-sm text-gray-600">Parent: <%= child.parent&.name || '—' %></div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm text-gray-500">Tokens</div>
+          <div class="text-xl font-bold"><%= child.token_balance %></div>
+        </div>
+      </div>
+
+      <div class="mt-3 text-sm text-gray-600">
+        <div>Chores: <%= child.chore_assignments.size %></div>
+        <div>PIN: <%= child.pin_code.presence || '—' %></div>
+        <% if child.public_token.present? && current_parent %>
+          <% full = "#{request.base_url}#{child.public_link}" %>
+          <div class="truncate"><a href="<%= full %>" class="text-indigo-600" target="_blank" rel="noopener"><%= full %></a></div>
+        <% end %>
+      </div>
+
+      <% if current_parent %>
+        <div class="mt-4 flex items-center gap-2">
+          <%= link_to 'View', child_path(child), class: 'btn btn-secondary' %>
+          <%= link_to 'Edit', edit_child_path(child), class: 'btn' %>
+          <%= button_to 'Delete', child_path(child), method: :delete, data: { confirm: 'Delete this child?' }, class: 'btn btn-danger' %>
+          <%= button_to 'Regenerate Link', regenerate_public_link_child_path(child), method: :post, class: 'btn btn-outline' %>
+        </div>
+      <% end %>
+    </div>
   <% end %>
 </div>
 
-<%= link_to "New child", new_child_path %>
+<!-- Pagination -->
+<div class="mt-6 flex items-center justify-between">
+  <div class="text-sm text-gray-600">Showing page <%= @page %> of <%= @total_pages %> (<%= @total_count %> children)</div>
+  <div class="flex items-center gap-2">
+    <% if @page > 1 %>
+      <%= link_to 'Previous', children_path(page: @page - 1, direction: params[:direction]), class: 'btn' %>
+    <% end %>
+    <% if @page < @total_pages %>
+      <%= link_to 'Next', children_path(page: @page + 1, direction: params[:direction]), class: 'btn btn-primary' %>
+    <% end %>
+  </div>
+</div>

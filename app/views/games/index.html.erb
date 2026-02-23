@@ -1,14 +1,54 @@
-<p style="color: green"><%= notice %></p>
+<% if notice %>
+  <div class="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded mb-4"><%= notice %></div>
+<% end %>
 
-<h1>Games</h1>
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Games</h1>
+  <div class="flex items-center gap-3">
+    <%# New game creation reserved for superadmin; hide for parents for now %>
+    <% if current_parent && current_parent.is_admin %>
+      <%= link_to 'New Game', new_game_path, class: 'btn btn-primary' %>
+    <% end %>
+    <%= link_to (params[:sort] == 'token_per_minute' ? 'Sort: Cost' : 'Sort: Name'), games_path(sort: (params[:sort] == 'token_per_minute' ? 'name' : 'token_per_minute'), direction: (params[:direction] == 'desc' ? 'asc' : 'desc')), class: 'text-sm text-gray-600' %>
+  </div>
+</div>
 
-<div id="games">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   <% @games.each do |game| %>
-    <%= render game %>
-    <p>
-      <%= link_to "Show this game", game %>
-    </p>
+    <div class="p-4 bg-white rounded-lg shadow-sm border">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="h-16 w-16 rounded-lg bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-700">
+            <%= (game.name.to_s.strip[0] || '?').upcase %>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-gray-900"><%= game.name %></div>
+            <div class="text-sm text-gray-600 mt-1"><%= truncate(game.description.to_s, length: 120) %></div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-sm text-gray-500">Cost / min</div>
+          <div class="text-xl font-bold text-orange-600"><%= game.token_per_minute %> 🪙</div>
+        </div>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between">
+        <div class="text-sm text-gray-600">
+          <div>Example cost: <span class="font-semibold"><%= (game.token_per_minute.to_i * 5) %> 🪙</span> (5 min)</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <% if game.name.to_s.downcase.include?('pong') %>
+            <%= link_to 'Play', '/games/pong_with_menu.html', target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
+          <% else %>
+            <%= link_to 'Play', game_path(game), target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
+          <% end %>
+          <% if current_parent && current_parent.is_admin %>
+            <%= link_to 'Edit', edit_game_path(game), class: 'px-3 py-2 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 text-sm' %>
+            <%= button_to 'Delete', game_path(game), method: :delete, data: { confirm: 'Delete game?' }, class: 'px-3 py-2 rounded bg-red-500 text-white hover:bg-red-600 text-sm' %>
+          <% end %>
+        </div>
+      </div>
+    </div>
   <% end %>
 </div>
 
-<%= link_to "New game", new_game_path %>

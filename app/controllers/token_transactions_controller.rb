@@ -3,7 +3,39 @@ class TokenTransactionsController < ApplicationController
 
   # GET /token_transactions or /token_transactions.json
   def index
-    @token_transactions = TokenTransaction.all
+    return redirect_to root_path, alert: 'Not authorized' unless current_parent
+
+    per_page = 20
+    page = params[:page].to_i > 0 ? params[:page].to_i : 1
+
+    # Allowed sort columns
+    allowed = { 'child' => 'parents.name', 'amount' => 'token_transactions.amount', 'description' => 'token_transactions.description', 'date' => 'token_transactions.created_at' }
+    sort_param = params[:sort].presence || 'date'
+    sort_col = allowed[sort_param] || allowed['date']
+    dir = params[:direction] == 'desc' ? 'DESC' : 'ASC'
+
+    # Transactions for this parent's children only
+    @token_transactions = TokenTransaction.joins(child: :parent)
+                                          .where(children: { parent_id: current_parent.id })
+                                          .select('token_transactions.*')
+                                          .order("#{sort_col} #{dir}")
+                                          .offset((page - 1) * per_page)
+                                          .limit(per_page)
+
+    # For balance-after calculation, load all transactions for these children ordered by created_at
+    all_for_children = TokenTransaction.where(child_id: current_parent.children.select(:id)).order(:child_id, :created_at, :id)
+    @balance_after = {}
+    all_for_children.group_by(&:child_id).each do |_child_id, txs|
+      running = 0
+      txs.each do |t|
+        running += t.amount.to_i
+        @balance_after[t.id] = running
+      end
+    end
+
+    @page = page
+    @per_page = per_page
+    @total_count = TokenTransaction.joins(:child).where(children: { parent_id: current_parent.id }).count
   end
 
   # GET /token_transactions/1 or /token_transactions/1.json

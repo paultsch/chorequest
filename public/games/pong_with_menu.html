@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Pong (with start menu)</title>
+    <style>
+      body { background: #000; color: #fff; display:flex; align-items:center; justify-content:center; height:100vh; }
+      canvas { background: #111; }
+    </style>
+  </head>
+  <body>
+    <div id="menu" style="position:absolute;left:50%;top:20%;transform:translateX(-50%);background:#222;padding:16px;border-radius:8px;text-align:center;">
+      <div style="margin-bottom:8px;color:#fff;font-size:18px">Pong</div>
+      <label style="color:#ddd;display:block;margin-bottom:6px">Play until score:
+        <input id="targetScore" type="number" min="1" value="5" style="width:64px;margin-left:8px" />
+      </label>
+      <button id="startBtn" style="margin-right:8px;padding:6px 12px">Start</button>
+      <button id="resetBtn" style="padding:6px 12px">Reset</button>
+      <div id="winner" style="margin-top:8px;color:#ffd"></div>
+    </div>
+    <canvas id="game" width="600" height="400"></canvas>
+    <script>
+      // Minimal pong implementation with left paddle following mouse/touch
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      const menu = document.getElementById('menu');
+      const startBtn = document.getElementById('startBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const targetInput = document.getElementById('targetScore');
+      const winnerDiv = document.getElementById('winner');
+
+      let ball = { x:300,y:200,vx:4,vy:3,r:8 };
+      let left = { x:10,y:150,w:10,h:100 };
+      let right = { x:580,y:150,w:10,h:100 };
+      let scoreLeft = 0, scoreRight = 0;
+      let targetScore = parseInt(targetInput.value,10) || 5;
+      let gameStarted = false;
+
+      function draw(){
+        ctx.clearRect(0,0,600,400);
+        ctx.fillStyle='#fff';
+        ctx.fillRect(left.x,left.y,left.w,left.h);
+        ctx.fillRect(right.x,right.y,right.w,right.h);
+        ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2); ctx.fill();
+        // draw scores
+        ctx.fillStyle = '#fff';
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(scoreLeft, 220, 30);
+        ctx.fillText(scoreRight, 380, 30);
+      }
+
+      function step(){
+        if(gameStarted){
+          ball.x+=ball.vx; ball.y+=ball.vy;
+          if(ball.y<ball.r||ball.y>400-ball.r) ball.vy*=-1;
+          // left collision/hit or miss
+          if(ball.x<left.x+left.w+ball.r){
+            if(ball.y>left.y&&ball.y<left.y+left.h){
+              ball.vx*=-1;
+            } else {
+              // right player scores
+              scoreRight++;
+              checkScore();
+              pointReset(false);
+            }
+          }
+          // right collision/hit or miss
+          if(ball.x>right.x-ball.r){
+            if(ball.y>right.y&&ball.y<right.y+right.h){
+              ball.vx*=-1;
+            } else {
+              // left player scores
+              scoreLeft++;
+              checkScore();
+              pointReset(true);
+            }
+          }
+        }
+        // simple AI for right paddle even when paused, keeps it natural
+        right.y += (ball.y - (right.y+right.h/2))*0.05;
+        draw();
+      }
+
+      function checkScore(){
+        if(scoreLeft>=targetScore||scoreRight>=targetScore){
+          gameStarted = false;
+          const winner = scoreLeft>scoreRight ? 'Left player wins!' : 'Right player wins!';
+          winnerDiv.textContent = winner;
+          menu.style.display = 'block';
+        }
+      }
+
+      function pointReset(toLeft){
+        ball.x=300; ball.y=200; ball.vx = 4*(Math.random()>0.5?1:-1); ball.vy = 3*(Math.random()>0.5?1:-1);
+        // if toLeft true, send ball toward left side so play continues naturally
+        if(toLeft) ball.vx = -Math.abs(ball.vx);
+        else ball.vx = Math.abs(ball.vx);
+      }
+
+      function resetGame(){
+        scoreLeft = 0; scoreRight = 0; targetScore = parseInt(targetInput.value,10) || 5; winnerDiv.textContent = '';
+        pointReset(Math.random()>0.5);
+        draw();
+      }
+
+      // make left paddle follow mouse/touch
+      canvas.addEventListener('mousemove', function(e){
+        const rect = canvas.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        left.y = Math.max(0, Math.min(400 - left.h, y - left.h/2));
+      });
+      canvas.addEventListener('touchmove', function(e){
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const y = e.touches[0].clientY - rect.top;
+        left.y = Math.max(0, Math.min(400 - left.h, y - left.h/2));
+      }, {passive:false});
+
+      startBtn.addEventListener('click', function(){
+        targetScore = parseInt(targetInput.value,10) || 5;
+        scoreLeft = 0; scoreRight = 0; winnerDiv.textContent = '';
+        menu.style.display = 'none';
+        gameStarted = true;
+        pointReset(Math.random()>0.5);
+        // If session_id present in query params, start client heartbeat
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const sessionId = params.get('session_id');
+          if(sessionId){ startHeartbeat(sessionId); }
+        } catch(e){ console.warn(e); }
+      });
+
+      resetBtn.addEventListener('click', function(){
+        resetGame();
+      });
+
+      // initial draw & loop
+      draw();
+      setInterval(step,16);
+
+      // Heartbeat logic: polls /game_sessions/:id/heartbeat every 60s while gameStarted
+      let heartbeatInterval = null;
+      function startHeartbeat(sessionId){
+        if(heartbeatInterval) return;
+        heartbeatInterval = setInterval(()=>{
+          if(!gameStarted) return;
+          fetch('/game_sessions/' + sessionId + '/heartbeat', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(r=>r.json()).then(data=>{
+              if(data.ended){
+                // stop the game and show message
+                gameStarted = false;
+                menu.style.display = 'block';
+                winnerDiv.textContent = 'Play session ended — out of tokens.';
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+              }
+            }).catch(e=>console.warn('heartbeat failed', e));
+        }, 60*1000);
+      }
+    </script>
+  </body>
+</html>
