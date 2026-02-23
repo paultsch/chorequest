@@ -39,6 +39,8 @@
         <div class="flex items-center gap-2">
           <% if game.name.to_s.downcase.include?('pong') %>
             <%= link_to 'Play', '/games/pong_with_menu.html', target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
+          <% elsif game.name.to_s.downcase.include?('runner') %>
+            <%= link_to 'Play', '/games/runner.html', target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
           <% else %>
             <%= link_to 'Play', game_path(game), target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
           <% end %>

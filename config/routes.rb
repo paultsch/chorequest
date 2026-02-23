@@ -9,6 +9,7 @@ Rails.application.routes.draw do
     end
   end
   resources :games
+  resources :game_scores, only: [:create]
   resources :token_transactions
   resources :chore_assignments
   post 'chore_assignments/:id/approve', to: 'chore_assignments#approve', as: :approve_chore_assignment

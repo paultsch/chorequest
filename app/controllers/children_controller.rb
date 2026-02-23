@@ -55,7 +55,13 @@ class ChildrenController < ApplicationController
     active = GameSession.where(child: @child, ended_at: nil).first
     if active
       # redirect to existing session's game URL
-      target = (active.game&.name.to_s.downcase.include?('pong') ? "/games/pong_with_menu.html?session_id=#{active.id}" : game_path(active.game) + "?session_id=#{active.id}")
+      target = if active.game&.name.to_s.downcase.include?('pong')
+        "/games/pong_with_menu.html?session_id=#{active.id}"
+      elsif active.game&.name.to_s.downcase.include?('runner')
+        "/games/runner.html?session_id=#{active.id}"
+      else
+        game_path(active.game) + "?session_id=#{active.id}"
+      end
       redirect_to target and return
     end
 
@@ -67,7 +73,13 @@ class ChildrenController < ApplicationController
     # duration_minutes must be > 0 (validation). Start at 1 minute and let heartbeat increment.
     gs = GameSession.create!(child: @child, game: game, started_at: Time.current, duration_minutes: 1, last_heartbeat: Time.current)
 
-    target = (game.name.to_s.downcase.include?('pong') ? "/games/pong_with_menu.html?session_id=#{gs.id}" : game_path(game) + "?session_id=#{gs.id}")
+    target = if game.name.to_s.downcase.include?('pong')
+      "/games/pong_with_menu.html?session_id=#{gs.id}"
+    elsif game.name.to_s.downcase.include?('runner')
+      "/games/runner.html?session_id=#{gs.id}"
+    else
+      game_path(game) + "?session_id=#{gs.id}"
+    end
     redirect_to target
   end
 
