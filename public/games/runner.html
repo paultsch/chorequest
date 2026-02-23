@@ -41,7 +41,7 @@
       let obstacles = [];
       let spawnTimer = 0;
       let spawnInterval = 120; // frames (less frequent obstacles)
-      let baseSpeed = 2; // start slower to make jumps easier
+      let baseSpeed = 2.6; // start a bit faster per request
       let speed = baseSpeed;
       let score = 0;
       let gameStarted = false;
@@ -125,9 +125,30 @@
         return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
       }
 
-      function jump(){
+      // Variable jump: charge while holding input (space / mouse / touch)
+      let chargeStart = null;
+      const maxCharge = 500; // ms -> high jump
+      const minCharge = 50;  // ms -> small jump
+
+      function startCharge(){
         if(!gameStarted || gameOver) return;
-        if(runner.onGround){ runner.vy = -14; runner.onGround = false; }
+        if(!runner.onGround) return;
+        chargeStart = performance.now();
+      }
+
+      function releaseCharge(){
+        if(!gameStarted || gameOver) return;
+        if(!runner.onGround) return;
+        if(!chargeStart) return;
+        const now = performance.now();
+        let dt = Math.max(0, now - chargeStart);
+        dt = Math.min(dt, maxCharge);
+        const frac = dt / maxCharge; // 0..1
+        // map frac to jump velocity: small -> -10, big -> -18
+        const vy = - (10 + frac * 8);
+        runner.vy = vy;
+        runner.onGround = false;
+        chargeStart = null;
       }
 
       function endGame(){
@@ -151,10 +172,37 @@
         obstacles = []; spawnTimer=0; speed = baseSpeed; score = 0; frame = 0; gameOver=false; scoreEl.textContent = 'Score: 0'; statusEl.style.display='none';
       }
 
-      // Events: space, click/tap anywhere
-      window.addEventListener('keydown', function(e){ if(e.code === 'Space') { e.preventDefault(); if(!gameStarted) startGame(); else jump(); } });
-      window.addEventListener('mousedown', function(e){ if(!gameStarted) startGame(); else jump(); });
-      window.addEventListener('touchstart', function(e){ e.preventDefault(); if(!gameStarted) startGame(); else jump(); }, {passive:false});
+      // Input handling: support charge-based jump (hold to charge)
+      let keyHeld = false;
+      window.addEventListener('keydown', function(e){
+        if(e.code === 'Space'){
+          e.preventDefault();
+          if(!gameStarted){ startGame(); }
+          if(!keyHeld){ startCharge(); }
+          keyHeld = true;
+        }
+      });
+      window.addEventListener('keyup', function(e){
+        if(e.code === 'Space'){
+          e.preventDefault();
+          releaseCharge();
+          keyHeld = false;
+        }
+      });
+
+      // Mouse/touch: start charge on down, release on up
+      window.addEventListener('mousedown', function(e){
+        if(!gameStarted){ startGame(); }
+        startCharge();
+      });
+      window.addEventListener('mouseup', function(e){ releaseCharge(); });
+
+      window.addEventListener('touchstart', function(e){
+        e.preventDefault();
+        if(!gameStarted){ startGame(); }
+        startCharge();
+      }, {passive:false});
+      window.addEventListener('touchend', function(e){ e.preventDefault(); releaseCharge(); }, {passive:false});
 
       startBtn.addEventListener('click', startGame);
 
