@@ -127,7 +127,7 @@
 
       // Variable jump: charge while holding input (space / mouse / touch)
       let chargeStart = null;
-      const maxCharge = 500; // ms -> high jump
+      const maxCharge = 600; // ms -> high jump (increased)
       const minCharge = 50;  // ms -> small jump
 
       function startCharge(){
@@ -144,8 +144,8 @@
         let dt = Math.max(0, now - chargeStart);
         dt = Math.min(dt, maxCharge);
         const frac = dt / maxCharge; // 0..1
-        // map frac to jump velocity: small -> -10, big -> -18
-        const vy = - (10 + frac * 8);
+        // map frac to jump velocity: small -> -12, big -> -22 (stronger)
+        const vy = - (12 + frac * 10);
         runner.vy = vy;
         runner.onGround = false;
         chargeStart = null;
