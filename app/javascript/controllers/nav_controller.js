@@ -11,9 +11,13 @@ export default class extends Controller {
 
   toggle(event) {
     event.preventDefault()
-    if (!this.hasMenuTarget || !this.hasButtonTarget) return
-    this.menuTargets.forEach(m => m.classList.toggle('hidden'))
-    const expanded = this.menuTargets[0].classList.contains('hidden') ? 'false' : 'true'
-    this.buttonTarget.setAttribute('aria-expanded', expanded)
+    const btn = event.currentTarget || event.target
+    const nav = btn.closest('nav') || this.element
+    const menu = nav.querySelector('[data-nav-target="menu"]')
+    if (!menu) return
+    menu.classList.toggle('hidden')
+    const expanded = menu.classList.contains('hidden') ? 'false' : 'true'
+    if (btn && btn.getAttribute) btn.setAttribute('aria-expanded', expanded)
+    else if (this.hasButtonTarget) this.buttonTarget.setAttribute('aria-expanded', expanded)
   }
 }
