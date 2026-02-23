@@ -37,11 +37,11 @@
 
       let width = canvas.width, height = canvas.height;
       let runner = { x: 80, y: height - 72, w: 48, h: 64, vy:0, onGround:true };
-      let gravity = 0.9;
+      let gravity = 0.6; // reduced gravity for higher, easier jumps
       let obstacles = [];
       let spawnTimer = 0;
-      let spawnInterval = 90; // frames
-      let baseSpeed = 3; // start slow
+      let spawnInterval = 120; // frames (less frequent obstacles)
+      let baseSpeed = 2; // start slower to make jumps easier
       let speed = baseSpeed;
       let score = 0;
       let gameStarted = false;
@@ -68,8 +68,8 @@
       }
 
       function spawnObstacle(){
-        const h = 24 + Math.random()*48; // variable heights
-        obstacles.push({ x: width + 20, y: height - h - 24, w: 24 + Math.random()*24, h: h, passed:false });
+        const h = 20 + Math.random()*40; // slightly shorter obstacles
+        obstacles.push({ x: width + 20, y: height - h - 24, w: 18 + Math.random()*18, h: h, passed:false });
       }
 
       function drawObstacle(o){
@@ -112,8 +112,8 @@
             if(o.x + o.w < -50){ obstacles.splice(i,1); }
           }
 
-          // increase difficulty slowly
-          if(frame % 300 === 0){ speed += 0.5; if(spawnInterval > 48) spawnInterval -= 6; }
+          // increase difficulty more gently
+          if(frame % 600 === 0){ speed += 0.3; if(spawnInterval > 72) spawnInterval -= 4; }
         }
 
         // draw runner & obstacles
