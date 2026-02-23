@@ -24,11 +24,18 @@ class ChoreAssignmentsController < ApplicationController
     assignments = ChoreAssignment.where(id: ids)
     case action
     when 'approve'
-      assignments.update_all(approved: true)
-      notice = "Approved #{assignments.size} assignment(s)."
+      # Use per-record updates so callbacks run (to grant tokens on approval).
+      approved_count = 0
+      assignments.find_each do |a|
+        approved_count += 1 if a.update(approved: true)
+      end
+      notice = "Approved #{approved_count} assignment(s)."
     when 'reject'
-      assignments.update_all(approved: false, completed: false)
-      notice = "Rejected #{assignments.size} assignment(s)."
+      rejected_count = 0
+      assignments.find_each do |a|
+        rejected_count += 1 if a.update(approved: false, completed: false)
+      end
+      notice = "Rejected #{rejected_count} assignment(s)."
     when 'delete'
       assignments.destroy_all
       notice = "Deleted #{assignments.size} assignment(s)."
