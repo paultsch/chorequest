@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Runner — Jungle Runner</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>
+      html,body { height:100%; margin:0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: linear-gradient(180deg,#b6e3a8,#8bd98a); }
+      .menu { position:absolute; left:50%; top:12%; transform:translateX(-50%); background: linear-gradient(180deg,#fff,#f7fff6); padding:18px; border-radius:12px; text-align:center; box-shadow:0 8px 20px rgba(0,0,0,0.12); }
+      .btn { padding:10px 16px; border-radius:8px; border:0; background:#2f9e44; color:white; font-weight:700; cursor:pointer; }
+      canvas { display:block; margin:0 auto; background: linear-gradient(#7be57a, #2fb84a); border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+      .score { position:absolute; left:16px; top:16px; background:rgba(255,255,255,0.8); padding:8px 12px; border-radius:999px; font-weight:700; color:#1b5e20; }
+      .hit { position:absolute; right:16px; top:16px; background:rgba(255,255,255,0.8); padding:8px 12px; border-radius:8px; color:#b71c1c; font-weight:700; }
+    </style>
+  </head>
+  <body>
+    <div class="menu" id="menu">
+      <h2 style="margin:0 0 8px 0;color:#1b5e20;font-size:20px">Jungle Runner</h2>
+      <p style="margin:0 0 12px 0;color:#2e7d32">Jump over obstacles and collect points — each obstacle you clear is +1!</p>
+      <div style="margin-bottom:8px"><button id="startBtn" class="btn">Start</button></div>
+      <div id="msg" style="color:#2e7d32;font-weight:600"></div>
+    </div>
+
+    <div class="score" id="score">Score: 0</div>
+    <div class="hit" id="status" style="display:none">Game Over</div>
+
+    <canvas id="game" width="800" height="320"></canvas>
+
+    <script>
+      // Runner game: simple side-scroller where runner auto-runs and obstacles come from right.
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      const menu = document.getElementById('menu');
+      const startBtn = document.getElementById('startBtn');
+      const scoreEl = document.getElementById('score');
+      const statusEl = document.getElementById('status');
+
+      let width = canvas.width, height = canvas.height;
+      let runner = { x: 80, y: height - 72, w: 48, h: 64, vy:0, onGround:true };
+      let gravity = 0.9;
+      let obstacles = [];
+      let spawnTimer = 0;
+      let spawnInterval = 90; // frames
+      let baseSpeed = 3; // start slow
+      let speed = baseSpeed;
+      let score = 0;
+      let gameStarted = false;
+      let gameOver = false;
+      let frame = 0;
+
+      function drawRunner(){
+        // draw simple rounded rectangle with leaf accent
+        ctx.fillStyle = '#ffd54f';
+        roundRect(ctx, runner.x, runner.y, runner.w, runner.h, 8);
+        ctx.fill();
+        ctx.fillStyle = '#4caf50';
+        ctx.fillRect(runner.x+6, runner.y-6, 12, 6);
+      }
+
+      function roundRect(ctx, x, y, w, h, r){
+        ctx.beginPath();
+        ctx.moveTo(x+r, y);
+        ctx.arcTo(x+w, y, x+w, y+h, r);
+        ctx.arcTo(x+w, y+h, x, y+h, r);
+        ctx.arcTo(x, y+h, x, y, r);
+        ctx.arcTo(x, y, x+w, y, r);
+        ctx.closePath();
+      }
+
+      function spawnObstacle(){
+        const h = 24 + Math.random()*48; // variable heights
+        obstacles.push({ x: width + 20, y: height - h - 24, w: 24 + Math.random()*24, h: h, passed:false });
+      }
+
+      function drawObstacle(o){
+        ctx.fillStyle = '#6d4c41';
+        roundRect(ctx, o.x, o.y, o.w, o.h, 6);
+        ctx.fill();
+        // little leaf
+        ctx.fillStyle = '#1b5e20';
+        ctx.fillRect(o.x + 2, o.y - 6, 8, 6);
+      }
+
+      function step(){
+        frame++;
+        // clear
+        ctx.clearRect(0,0,width,height);
+        // ground
+        ctx.fillStyle = '#2e7d32';
+        ctx.fillRect(0, height-24, width, 24);
+
+        if(gameStarted && !gameOver){
+          // gravity
+          runner.vy += gravity;
+          runner.y += runner.vy;
+          if(runner.y >= height - runner.h - 24){ runner.y = height - runner.h - 24; runner.vy = 0; runner.onGround = true; }
+
+          // spawn obstacles
+          spawnTimer++;
+          if(spawnTimer >= spawnInterval){ spawnTimer = 0; spawnObstacle(); }
+
+          // move obstacles
+          for(let i=obstacles.length-1;i>=0;i--){
+            const o = obstacles[i];
+            o.x -= speed;
+            // score if passed
+            if(!o.passed && o.x + o.w < runner.x){ o.passed = true; score++; scoreEl.textContent = 'Score: '+score; }
+            // collision
+            if(rectsIntersect(runner, o)){
+              endGame();
+            }
+            if(o.x + o.w < -50){ obstacles.splice(i,1); }
+          }
+
+          // increase difficulty slowly
+          if(frame % 300 === 0){ speed += 0.5; if(spawnInterval > 48) spawnInterval -= 6; }
+        }
+
+        // draw runner & obstacles
+        obstacles.forEach(drawObstacle);
+        drawRunner();
+      }
+
+      function rectsIntersect(a,b){
+        return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+      }
+
+      function jump(){
+        if(!gameStarted || gameOver) return;
+        if(runner.onGround){ runner.vy = -14; runner.onGround = false; }
+      }
+
+      function endGame(){
+        gameOver = true;
+        gameStarted = false;
+        statusEl.style.display = 'block';
+        menu.style.display = 'block';
+        // post score if session present
+        try { submitScore(score); } catch(e){ console.warn('score submit failed', e); }
+      }
+
+      function submitScore(score){
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session_id');
+        const payload = sessionId ? { session_id: sessionId, score: score } : { score: score };
+        fetch('/game_scores', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+          .then(r=>r.json()).then(data=>{ console.log('score saved', data); }).catch(e=>console.warn(e));
+      }
+
+      function reset(){
+        obstacles = []; spawnTimer=0; speed = baseSpeed; score = 0; frame = 0; gameOver=false; scoreEl.textContent = 'Score: 0'; statusEl.style.display='none';
+      }
+
+      // Events: space, click/tap anywhere
+      window.addEventListener('keydown', function(e){ if(e.code === 'Space') { e.preventDefault(); if(!gameStarted) startGame(); else jump(); } });
+      window.addEventListener('mousedown', function(e){ if(!gameStarted) startGame(); else jump(); });
+      window.addEventListener('touchstart', function(e){ e.preventDefault(); if(!gameStarted) startGame(); else jump(); }, {passive:false});
+
+      startBtn.addEventListener('click', startGame);
+
+      function startGame(){
+        reset();
+        menu.style.display = 'none';
+        gameStarted = true;
+        // if session_id present, start heartbeat like pong
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session_id');
+        if(sessionId){ startHeartbeat(sessionId); }
+      }
+
+      // Heartbeat logic (mirrors pong): poll every 60s while playing
+      let heartbeatInterval = null;
+      function startHeartbeat(sessionId){
+        if(heartbeatInterval) return;
+        heartbeatInterval = setInterval(()=>{
+          if(!gameStarted) return;
+          fetch('/game_sessions/' + sessionId + '/heartbeat', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(r=>r.json()).then(data=>{
+              if(data.ended){
+                // stop and show message
+                gameStarted = false;
+                gameOver = true;
+                menu.style.display = 'block';
+                statusEl.style.display = 'block';
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+              }
+            }).catch(e=>console.warn('heartbeat failed', e));
+        }, 60*1000);
+      }
+
+      // main loop
+      setInterval(step, 1000/60);
+    </script>
+  </body>
+</html>
