@@ -7,6 +7,14 @@ class Child < ApplicationRecord
 
   validates :name, presence: true
 
+  def age
+    return nil unless birthday
+    today = Date.current
+    years = today.year - birthday.year
+    years -= 1 if today < birthday + years.years
+    years
+  end
+
   def token_balance
     token_transactions.sum(:amount)
   end

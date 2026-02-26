@@ -21,7 +21,7 @@ class ChoreAssignmentsController < ApplicationController
     ids = params[:assignment_ids] || []
     action = params[:bulk_action]
 
-    assignments = ChoreAssignment.where(id: ids)
+    assignments = ChoreAssignment.where(id: ids, child: current_parent.children)
     case action
     when 'approve'
       # Use per-record updates so callbacks run (to grant tokens on approval).
@@ -215,7 +215,7 @@ class ChoreAssignmentsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_chore_assignment
-      @chore_assignment = ChoreAssignment.find(params[:id])
+      @chore_assignment = ChoreAssignment.where(child: current_parent.children).find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.

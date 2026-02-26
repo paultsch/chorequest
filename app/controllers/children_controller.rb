@@ -10,10 +10,11 @@ class ChildrenController < ApplicationController
     # Sorting (only by name supported for now)
     sort_dir = params[:direction] == 'desc' ? :desc : :asc
 
-    @total_count = Child.count
+    scope = current_parent.children
+    @total_count = scope.count
     @total_pages = (@total_count / per_page.to_f).ceil
 
-    @children = Child.includes(:parent, :chore_assignments, :token_transactions)
+    @children = scope.includes(:parent, :chore_assignments, :token_transactions)
                      .order(name: sort_dir)
                      .offset((page - 1) * per_page)
                      .limit(per_page)
@@ -94,7 +95,7 @@ class ChildrenController < ApplicationController
 
   # POST /children or /children.json
   def create
-    @child = Child.new(child_params)
+    @child = current_parent.children.build(child_params)
 
     respond_to do |format|
       if @child.save
@@ -139,11 +140,11 @@ class ChildrenController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_child
-      @child = Child.find(params[:id])
+      @child = current_parent.children.find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.
     def child_params
-      params.require(:child).permit(:name, :age, :parent_id, :pin_code)
+      params.require(:child).permit(:name, :birthday, :pin_code)
     end
 end

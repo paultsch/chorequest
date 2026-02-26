@@ -12,7 +12,7 @@
 
   <div>
     <%= form.label :child_id, class: 'label' %>
-    <%= form.collection_select :child_id, Child.all, :id, :name, { prompt: 'Select a child' }, { class: 'input-field' } %>
+    <%= form.collection_select :child_id, current_parent.children.order(:name), :id, :name, { prompt: 'Select a child' }, { class: 'input-field' } %>
   </div>
 
   <div>

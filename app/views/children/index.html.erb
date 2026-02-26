@@ -20,7 +20,7 @@
           </div>
           <div>
             <div class="text-lg font-semibold text-gray-900"><%= child.name %></div>
-            <div class="text-sm text-gray-600">Age: <%= child.age %></div>
+            <div class="text-sm text-gray-600">Age: <%= child.age || '—' %><% if child.birthday %> <span class="text-gray-400">(born <%= child.birthday.strftime('%b %-d, %Y') %>)</span><% end %></div>
             <div class="text-sm text-gray-600">Parent: <%= child.parent&.name || '—' %></div>
           </div>
         </div>

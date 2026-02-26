@@ -16,13 +16,8 @@
   </div>
 
   <div>
-    <%= form.label :age, class: 'label' %>
-    <%= form.number_field :age, class: 'input-field' %>
-  </div>
-
-  <div>
-    <%= form.label :parent_id, class: 'label' %>
-    <%= form.collection_select :parent_id, Parent.all, :id, :name, { prompt: 'Select parent' }, { class: 'input-field' } %>
+    <%= form.label :birthday, class: 'label' %>
+    <%= form.date_field :birthday, class: 'input-field', max: Date.current %>
   </div>
 
   <div>

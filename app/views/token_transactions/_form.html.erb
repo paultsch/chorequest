@@ -13,7 +13,7 @@
 
   <div>
     <%= form.label :child_id, style: "display: block" %>
-    <%= form.text_field :child_id %>
+    <%= form.collection_select :child_id, current_parent.children.order(:name), :id, :name, { prompt: 'Select a child' }, { style: "display: block" } %>
   </div>
 
   <div>
