@@ -8,20 +8,27 @@
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
-Parent.destroy_all
-Child.destroy_all
-Chore.destroy_all
-ChoreAssignment.destroy_all
-TokenTransaction.destroy_all
-Game.destroy_all
-GameSession.destroy_all
+parent1 = Parent.find_or_create_by!(email: 'alice@example.com') do |p|
+  p.name = 'Alice Parent'
+  p.password = 'password'
+end
+parent2 = Parent.find_or_create_by!(email: 'bob@example.com') do |p|
+  p.name = 'Bob Parent'
+  p.password = 'password'
+end
 
-parent1 = Parent.create!(name: 'Alice Parent', email: 'alice@example.com', password: 'password')
-parent2 = Parent.create!(name: 'Bob Parent', email: 'bob@example.com', password: 'password')
-
-child1 = parent1.children.create!(name: 'Sam', age: 8, pin_code: '1234')
-child2 = parent1.children.create!(name: 'Lily', age: 6, pin_code: '2345')
-child3 = parent2.children.create!(name: 'Max', age: 10, pin_code: '3456')
+child1 = parent1.children.find_or_create_by!(name: 'Sam') do |c|
+  c.birthday = 8.years.ago
+  c.pin_code = '1234'
+end
+child2 = parent1.children.find_or_create_by!(name: 'Lily') do |c|
+  c.birthday = 6.years.ago
+  c.pin_code = '2345'
+end
+child3 = parent2.children.find_or_create_by!(name: 'Max') do |c|
+  c.birthday = 10.years.ago
+  c.pin_code = '3456'
+end
 
 chores = [
 	{ name: 'Make Bed', description: 'Tidy your bed', definition_of_done: 'Sheets straight, pillows fluffed', token_amount: 5 },
@@ -31,14 +38,17 @@ chores = [
 	{ name: 'Tidy Toys', description: 'Put toys away', definition_of_done: 'Toy box tidy', token_amount: 4 }
 ]
 
-chores.each { |c| Chore.create!(c) }
+chores.each { |c| Chore.find_or_create_by!(name: c[:name]) { |r| r.assign_attributes(c) } }
 
-game = Game.create!(name: 'Pong', description: 'Classic pong game', token_per_minute: 1)
+game = Game.find_or_create_by!(name: 'Pong') do |g|
+  g.description = 'Classic pong game'
+  g.token_per_minute = 1
+end
 
-# A sample transaction to give kids some tokens
-TokenTransaction.create!(child: child1, amount: 20, description: 'Initial grant')
-TokenTransaction.create!(child: child2, amount: 15, description: 'Initial grant')
-TokenTransaction.create!(child: child3, amount: 10, description: 'Initial grant')
+# Give kids some tokens if they have none yet
+TokenTransaction.find_or_create_by!(child: child1, description: 'Initial grant') { |t| t.amount = 20 }
+TokenTransaction.find_or_create_by!(child: child2, description: 'Initial grant') { |t| t.amount = 15 }
+TokenTransaction.find_or_create_by!(child: child3, description: 'Initial grant') { |t| t.amount = 10 }
 
 # Create a default super-admin if Admins table exists
 begin
