@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_27_001508) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_28_064319) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -123,6 +123,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_27_001508) do
     t.integer "token_amount"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "parent_id", null: false
+    t.index ["parent_id"], name: "index_chores_on_parent_id"
   end
 
   create_table "game_scores", force: :cascade do |t|
@@ -210,6 +212,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_27_001508) do
   add_foreign_key "chore_assignments", "children"
   add_foreign_key "chore_assignments", "chores"
   add_foreign_key "chore_attempts", "chore_assignments"
+  add_foreign_key "chores", "parents"
   add_foreign_key "game_scores", "children"
   add_foreign_key "game_scores", "games"
   add_foreign_key "game_sessions", "children"

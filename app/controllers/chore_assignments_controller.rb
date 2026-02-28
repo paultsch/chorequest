@@ -1,19 +1,32 @@
 class ChoreAssignmentsController < ApplicationController
   before_action :set_chore_assignment, only: %i[ show edit update destroy ]
 
-  # GET /chore_assignments or /chore_assignments.json
+  # GET /chore_assignments — drag-and-drop scheduler
   def index
-    # Only show assignments for this parent's children in private view
-    if current_parent
-      @chore_assignments = ChoreAssignment.includes(:child, :chore)
-                                           .where(child: current_parent.children)
-                                           .order('children.name ASC')
+    @children = current_parent.children.order(:name)
+    @chores   = current_parent.chores.order(:name)
+    @selected_child = @children.find_by(id: params[:child_id]) || @children.first
+    @view = params[:view].presence_in(%w[month week]) || 'month'
+    today = Date.current
+
+    if @view == 'month'
+      @year  = (params[:year]  || today.year).to_i
+      @month = (params[:month] || today.month).to_i
+      @period_start = Date.new(@year, @month, 1)
+      @period_end   = @period_start.end_of_month
     else
-      # non-authenticated users should not see assignments
-      @chore_assignments = ChoreAssignment.none
+      @week_start   = params[:week_start].present? ? Date.parse(params[:week_start]) : today.beginning_of_week(:sunday)
+      @period_start = @week_start
+      @period_end   = @week_start + 6.days
     end
-    # Group assignments by child for the card grid
-    @assignments_by_child = @chore_assignments.group_by(&:child)
+
+    @assignments_by_date = if @selected_child
+      @selected_child.chore_assignments.includes(:chore)
+        .where(scheduled_on: @period_start..@period_end)
+        .group_by { |a| a.scheduled_on.to_s }
+    else
+      {}
+    end
   end
 
   # POST /chore_assignments/bulk_update
@@ -67,6 +80,14 @@ class ChoreAssignmentsController < ApplicationController
     # Support creating multiple date-specific assignments when user passes dates_input
     dates_input = params[:chore_assignment].delete(:dates_input)&.to_s&.strip
     mode = params[:chore_assignment].delete(:assignment_mode)
+
+    # Verify submitted chore belongs to the current parent
+    chore = current_parent.chores.find_by(id: chore_assignment_params[:chore_id])
+    if chore.nil?
+      redirect_back fallback_location: new_chore_assignment_path, alert: "Invalid chore selected."
+      return
+    end
+
     dates = []
     if dates_input.present?
       if dates_input.start_with?('[')
@@ -150,7 +171,16 @@ class ChoreAssignmentsController < ApplicationController
         # No recurrence expansion here; UI supports single or range creation which is handled above.
 
         format.html { redirect_to child_path(@chore_assignment.child), notice: "Chore assignment was successfully created." }
-        format.json { render :show, status: :created, location: @chore_assignment }
+        format.json {
+          render json: {
+            id:           @chore_assignment.id,
+            chore_id:     @chore_assignment.chore_id,
+            child_id:     @chore_assignment.child_id,
+            scheduled_on: @chore_assignment.scheduled_on.iso8601,
+            chore_name:   @chore_assignment.chore.name,
+            token_amount: @chore_assignment.chore.token_amount
+          }, status: :created
+        }
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: @chore_assignment.errors, status: :unprocessable_entity }

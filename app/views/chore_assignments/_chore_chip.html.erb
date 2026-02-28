@@ -1,0 +1,16 @@
+<%# assignment chip — shown inside calendar day cells.
+    × button: always visible on mobile, appears on hover on desktop. %>
+<div class="chore-chip group flex items-center justify-between gap-1
+            bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 text-xs font-medium
+            max-w-full"
+     data-scheduler-target="chip"
+     data-assignment-id="<%= assignment.id %>"
+     data-chore-id="<%= assignment.chore_id %>">
+  <span class="truncate leading-tight"><%= assignment.chore.name %></span>
+  <button type="button"
+          class="flex-shrink-0 ml-0.5 text-blue-400 hover:text-red-500 transition-colors
+                 leading-none opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          aria-label="Remove assignment"
+          data-action="click->scheduler#removeAssignment"
+          data-assignment-id="<%= assignment.id %>">×</button>
+</div>

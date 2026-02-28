@@ -1,3 +1,6 @@
 class Chore < ApplicationRecord
-	has_many :chore_assignments, dependent: :destroy
+  belongs_to :parent
+  has_many :chore_assignments, dependent: :destroy
+
+  validates :name, presence: true
 end

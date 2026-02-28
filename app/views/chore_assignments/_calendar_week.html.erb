@@ -1,0 +1,66 @@
+<%# Week grid calendar. Locals: assignments_by_date (Hash<String,Array>), week_start (Date), selected_child %>
+<% week_days = calendar_week_days(week_start) %>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+
+  <%# Day headers: day name + date number %>
+  <div class="grid grid-cols-7 border-b border-gray-100">
+    <% week_days.each do |date| %>
+      <% is_today = date == Date.current %>
+      <div class="py-3 text-center border-r border-gray-100 last:border-r-0">
+        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+          <span class="hidden sm:inline"><%= date.strftime('%a') %></span>
+          <span class="sm:hidden"><%= date.strftime('%a')[0] %></span>
+        </div>
+        <% date_num_class = is_today ? 'w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mx-auto' : 'text-sm font-semibold text-gray-700 leading-none' %>
+        <div class="<%= date_num_class %>">
+          <%= date.day %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Single row of day cells — taller to fit more chips %>
+  <div class="grid grid-cols-7 divide-x divide-gray-100">
+    <% week_days.each do |date| %>
+      <% day_assignments = assignments_by_date[date.to_s] || [] %>
+      <% is_today = date == Date.current %>
+
+      <div class="min-h-[180px] sm:min-h-[220px] p-1.5 transition-colors
+                  <%= is_today ? 'bg-blue-50/40' : 'bg-white' %>
+                  hover:bg-blue-50/60"
+           data-scheduler-target="day"
+           data-date="<%= date.iso8601 %>"
+           data-child-id="<%= selected_child&.id %>"
+           data-action="dragover->scheduler#dragOver
+                        dragleave->scheduler#dragLeave
+                        drop->scheduler#drop
+                        click->scheduler#dayClicked">
+
+        <%# Assignment chips — full name visible (no truncation needed, cells are wider) %>
+        <div data-scheduler-target="chipContainer" class="space-y-1">
+          <% day_assignments.each do |assignment| %>
+            <div class="chore-chip group flex items-center justify-between gap-1
+                        bg-blue-100 text-blue-800 rounded-md px-2 py-1 text-xs font-medium"
+                 data-scheduler-target="chip"
+                 data-assignment-id="<%= assignment.id %>"
+                 data-chore-id="<%= assignment.chore_id %>">
+              <span class="leading-tight"><%= assignment.chore.name %></span>
+              <button type="button"
+                      class="flex-shrink-0 ml-1 text-blue-400 hover:text-red-500 transition-colors
+                             leading-none opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                      aria-label="Remove"
+                      data-action="click->scheduler#removeAssignment"
+                      data-assignment-id="<%= assignment.id %>">×</button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+</div>
+
+<% if selected_child.nil? %>
+  <p class="mt-3 text-center text-sm text-gray-400">Select a child above to see their assignments.</p>
+<% end %>

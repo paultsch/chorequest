@@ -5,6 +5,7 @@ class Parent < ApplicationRecord
 				 :recoverable, :rememberable, :validatable
 
 	has_many :children, dependent: :destroy
+	has_many :chores, dependent: :destroy
 
 	validates :name, presence: true
 end

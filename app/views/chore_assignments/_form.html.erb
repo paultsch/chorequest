@@ -17,7 +17,7 @@
 
   <div>
     <%= form.label :chore_id, class: 'label' %>
-    <%= form.collection_select :chore_id, Chore.all, :id, :name, { prompt: 'Select a chore' }, { class: 'input-field' } %>
+    <%= form.collection_select :chore_id, current_parent.chores.order(:name), :id, :name, { prompt: 'Select a chore' }, { class: 'input-field' } %>
   </div>
 
   <div>

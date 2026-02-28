@@ -1,4 +1,5 @@
 class ChoresController < ApplicationController
+  before_action :authenticate_parent!
   before_action :set_chore, only: %i[ show edit update destroy ]
 
   # GET /chores or /chores.json
@@ -8,8 +9,9 @@ class ChoresController < ApplicationController
     sort_col = allowed_sorts.include?(params[:sort]) ? params[:sort] : 'name'
     sort_dir = params[:direction] == 'desc' ? :desc : :asc
 
-    @chores = Chore.includes(:chore_assignments)
-                   .order(sort_col => sort_dir)
+    @chores = current_parent.chores
+                             .includes(:chore_assignments)
+                             .order(sort_col => sort_dir)
   end
 
   # GET /chores/1 or /chores/1.json
@@ -18,7 +20,7 @@ class ChoresController < ApplicationController
 
   # GET /chores/new
   def new
-    @chore = Chore.new
+    @chore = current_parent.chores.build
   end
 
   # GET /chores/1/edit
@@ -27,7 +29,7 @@ class ChoresController < ApplicationController
 
   # POST /chores or /chores.json
   def create
-    @chore = Chore.new(chore_params)
+    @chore = current_parent.chores.build(chore_params)
 
     respond_to do |format|
       if @chore.save
@@ -117,7 +119,7 @@ class ChoresController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_chore
-      @chore = Chore.find(params[:id])
+      @chore = current_parent.chores.find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.
