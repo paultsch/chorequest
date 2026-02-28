@@ -1,0 +1,82 @@
+// ChoreQuest Service Worker
+// Caching strategy designed for Turbo Rails compatibility:
+//   - HTML navigation requests: Network-first with offline fallback
+//     Turbo Drive fetches pages via fetch() and requires fresh HTML.
+//     Returning stale cached HTML causes UI state drift with Turbo.
+//   - Fingerprinted assets (/assets/**): Cache-first
+//     Sprockets fingerprints produce unique URLs per deploy — safe to cache indefinitely.
+//   - Static public files (/icons/**, /games/**): Cache-first
+//   - POST/PATCH/DELETE: Always pass-through — never intercept Turbo form submissions.
+//   - Everything else: Pass-through (auth endpoints, API calls must hit the server)
+
+const CACHE_VERSION = 'v1';
+const CACHE_NAME = `chorequest-${CACHE_VERSION}`;
+const OFFLINE_URL = '/offline';
+
+// Pre-cache the offline fallback on install
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.add(OFFLINE_URL))
+      .then(() => self.skipWaiting())
+  );
+});
+
+// Remove caches from previous versions on activate
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((names) => Promise.all(
+        names
+          .filter((name) => name.startsWith('chorequest-') && name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Only handle same-origin requests
+  if (url.origin !== location.origin) return;
+
+  // Never intercept non-GET requests (Turbo form submissions: POST, PATCH, DELETE)
+  if (request.method !== 'GET') return;
+
+  // Skip the service worker's own URL
+  if (url.pathname === '/service-worker.js') return;
+
+  const acceptsHtml = request.headers.get('Accept')?.includes('text/html');
+  const isAsset    = url.pathname.startsWith('/assets/');
+  const isIcon     = url.pathname.startsWith('/icons/');
+  const isGame     = url.pathname.startsWith('/games/');
+
+  if (acceptsHtml) {
+    // HTML navigation — Network-first with offline fallback
+    // Turbo needs fresh HTML; never serve stale pages from cache.
+    event.respondWith(
+      fetch(request).catch(() => caches.match(OFFLINE_URL))
+    );
+
+  } else if (isAsset || isIcon || isGame) {
+    // Cache-first for fingerprinted assets and static public files
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+
+        return fetch(request).then((response) => {
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          return response;
+        });
+      })
+    );
+
+  }
+  // Everything else falls through to the browser's default fetch handling
+});

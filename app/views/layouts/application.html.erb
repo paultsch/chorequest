@@ -6,6 +6,15 @@
     <title>ChoreQuest</title>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+
+    <%# PWA %>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ChoreQuest">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
@@ -110,6 +119,33 @@
       </div>
     </main>
 
+    <%# PWA install prompt banner (Chrome/Edge/Android only — invisible on iOS) %>
+    <div data-controller="pwa-install">
+      <div data-pwa-install-target="banner"
+           class="hidden fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80
+                  bg-white rounded-2xl shadow-xl border border-gray-100 p-4 z-50">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl
+                      flex items-center justify-center text-white font-bold text-sm flex-shrink-0">CQ</div>
+          <div>
+            <p class="font-semibold text-gray-900 text-sm leading-tight">Install ChoreQuest</p>
+            <p class="text-gray-500 text-xs">Add to your home screen</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button data-action="pwa-install#install"
+                  class="flex-1 bg-blue-600 text-white text-sm font-semibold py-2 rounded-full
+                         hover:bg-blue-700 transition-colors">
+            Install
+          </button>
+          <button data-action="pwa-install#dismiss"
+                  class="px-4 text-gray-500 text-sm hover:text-gray-700 transition-colors">
+            Not now
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-12">
       <div class="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -120,5 +156,15 @@
         <div class="text-gray-500 text-sm">&copy; <%= Time.now.year %> ChoreQuest. All rights reserved.</div>
       </div>
     </footer>
+  <%# PWA Service Worker registration.
+      The 'serviceWorker' in navigator guard ensures this silently no-ops inside
+      iOS WKWebView and Android WebViews used by Turbo Native — no conflict. %>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+      });
+    }
+  </script>
   </body>
 </html>

@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # PWA
+  get "manifest.webmanifest", to: "pwa#manifest",       as: :pwa_manifest
+  get "service-worker.js",    to: "pwa#service_worker", as: :pwa_service_worker
+  get "offline",              to: "pwa#offline",         as: :pwa_offline
+
   devise_for :parents
 
   resources :game_sessions
