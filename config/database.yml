@@ -79,6 +79,4 @@ test:
 #
 production:
   <<: *default
-  database: chorequest_production
-  username: chorequest
-  password: <%= ENV["CHOREQUEST_DATABASE_PASSWORD"] %>
+  url: <%= ENV["DATABASE_URL"] %>
