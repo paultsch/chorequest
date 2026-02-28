@@ -17,7 +17,7 @@ class ChoresControllerTest < ActionDispatch::IntegrationTest
 
   test "should create chore" do
     assert_difference("Chore.count") do
-      post chores_url, params: { chore: { definition_of_done: @chore.definition_of_done, description: @chore.description, name: @chore.name, recurrence: @chore.recurrence, token_amount: @chore.token_amount } }
+      post chores_url, params: { chore: { definition_of_done: @chore.definition_of_done, description: @chore.description, name: @chore.name, token_amount: @chore.token_amount } }
     end
 
     assert_redirected_to chore_url(Chore.last)
@@ -34,7 +34,7 @@ class ChoresControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update chore" do
-    patch chore_url(@chore), params: { chore: { definition_of_done: @chore.definition_of_done, description: @chore.description, name: @chore.name, recurrence: @chore.recurrence, token_amount: @chore.token_amount } }
+    patch chore_url(@chore), params: { chore: { definition_of_done: @chore.definition_of_done, description: @chore.description, name: @chore.name, token_amount: @chore.token_amount } }
     assert_redirected_to chore_url(@chore)
   end
 

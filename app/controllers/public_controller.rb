@@ -44,6 +44,46 @@ class PublicController < ApplicationController
     render template: 'children/play'
   end
 
+  # GET /public/:token/attempt/:assignment_id
+  def new_attempt
+    @child = Child.find_by(public_token: params[:token])
+    return render plain: "Not found", status: :not_found unless @child
+
+    @chore_assignment = @child.chore_assignments.find_by(id: params[:assignment_id])
+    return render plain: "Not found", status: :not_found unless @chore_assignment
+
+    if @chore_assignment.pending_attempt?
+      redirect_to public_child_path(params[:token]), alert: 'This chore is already awaiting review.' and return
+    end
+    if @chore_assignment.approved == true
+      redirect_to public_child_path(params[:token]), alert: 'This chore has already been approved.' and return
+    end
+  end
+
+  # POST /public/:token/attempt
+  def create_attempt
+    @child = Child.find_by(public_token: params[:token])
+    return render plain: "Not found", status: :not_found unless @child
+
+    @chore_assignment = @child.chore_assignments.find_by(id: params[:chore_assignment_id])
+    return render plain: "Not found", status: :not_found unless @chore_assignment
+
+    if @chore_assignment.pending_attempt?
+      redirect_to public_child_path(params[:token]), alert: 'This chore is already awaiting review.' and return
+    end
+
+    attempt = @chore_assignment.chore_attempts.build(status: 'pending')
+    attempt.photo.attach(params.dig(:chore_attempt, :photo)) if params.dig(:chore_attempt, :photo).present?
+
+    if attempt.valid? && attempt.save
+      @chore_assignment.update!(completed: true, approved: nil, completed_at: Time.current)
+      AnalyzeChorePhotoJob.perform_later(attempt.id) if attempt.photo.attached?
+      redirect_to public_child_path(params[:token]), notice: 'Chore submitted for review!'
+    else
+      render :new_attempt, status: :unprocessable_entity
+    end
+  end
+
   # POST /public/:token/start_session
   def start_session
     @child = Child.find_by(public_token: params[:token])

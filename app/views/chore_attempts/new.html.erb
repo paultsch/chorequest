@@ -1,0 +1,38 @@
+<div class="max-w-lg mx-auto space-y-6">
+  <% if alert %>
+    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg"><%= alert %></div>
+  <% end %>
+
+  <section class="bg-white rounded-2xl shadow p-6 md:p-8">
+    <h1 class="text-2xl font-bold text-gray-900 mb-1">Submit Chore for Review</h1>
+    <p class="text-sm text-gray-600 mb-6">
+      <strong><%= @chore_assignment.chore.name %></strong>
+      <% if @chore_assignment.chore.definition_of_done.present? %>
+        &mdash; <%= @chore_assignment.chore.definition_of_done %>
+      <% end %>
+    </p>
+
+    <%= form_with url: chore_attempts_path, method: :post, multipart: true, class: 'space-y-5' do |form| %>
+      <%= hidden_field_tag :chore_assignment_id, @chore_assignment.id %>
+
+      <div>
+        <%= label_tag 'chore_attempt[photo]',
+              @chore_assignment.require_photo? ? 'Photo proof (required)' : 'Photo proof (optional)',
+              class: 'label' %>
+        <%= file_field_tag 'chore_attempt[photo]',
+              accept: 'image/*',
+              capture: 'environment',
+              class: 'block w-full text-sm text-gray-700 mt-1 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100',
+              required: @chore_assignment.require_photo? %>
+        <% unless @chore_assignment.require_photo? %>
+          <p class="text-xs text-gray-500 mt-1">A photo helps your parent verify the chore is done.</p>
+        <% end %>
+      </div>
+
+      <div class="flex items-center gap-3 pt-2">
+        <%= form.submit 'Submit for Review', class: 'btn btn-primary' %>
+        <%= link_to 'Cancel', child_path(@chore_assignment.child), class: 'btn' %>
+      </div>
+    <% end %>
+  </section>
+</div>

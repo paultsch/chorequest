@@ -1,5 +1,5 @@
 class ChoreAssignmentsController < ApplicationController
-  before_action :set_chore_assignment, only: %i[ show edit update destroy mark_complete ]
+  before_action :set_chore_assignment, only: %i[ show edit update destroy ]
 
   # GET /chore_assignments or /chore_assignments.json
   def index
@@ -181,37 +181,6 @@ class ChoreAssignmentsController < ApplicationController
     end
   end
 
-  # POST /chore_assignments/:id/mark_complete
-  def mark_complete
-    # When a child marks done, mark completed, set completed_at and ensure approved is false so parent can review
-    # Use nil for `approved` to represent "awaiting approval" (parent hasn't acted yet)
-    if @chore_assignment.update(completed: true, approved: nil, completed_at: Time.current)
-      redirect_back fallback_location: child_path(@chore_assignment.child), notice: "Chore marked complete and pending approval."
-    else
-      redirect_back fallback_location: child_path(@chore_assignment.child), alert: "Could not mark chore as complete."
-    end
-  end
-
-  # POST /chore_assignments/:id/approve
-  def approve
-    ca = @chore_assignment
-    if ca.update(approved: true)
-      redirect_back fallback_location: admin_dashboard_index_path, notice: 'Assignment approved.'
-    else
-      redirect_back fallback_location: admin_dashboard_index_path, alert: 'Could not approve.'
-    end
-  end
-
-  # POST /chore_assignments/:id/reject
-  def reject
-    ca = @chore_assignment
-    if ca.update(approved: false, completed: false)
-      redirect_back fallback_location: admin_dashboard_index_path, notice: 'Assignment rejected.'
-    else
-      redirect_back fallback_location: admin_dashboard_index_path, alert: 'Could not reject.'
-    end
-  end
-
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_chore_assignment
@@ -220,6 +189,6 @@ class ChoreAssignmentsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def chore_assignment_params
-      params.require(:chore_assignment).permit(:child_id, :chore_id, :day, :completed, :approved, :completion_photo, :scheduled_on, extra_dates: [])
+      params.require(:chore_assignment).permit(:child_id, :chore_id, :day, :completed, :approved, :require_photo, :scheduled_on, extra_dates: [])
     end
 end

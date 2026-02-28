@@ -58,17 +58,23 @@
                     <div class="text-xs text-gray-500 mt-1">Scheduled: <%= l(assignment.scheduled_on, format: :long) %></div>
                   </div>
                     <div class="flex items-center gap-2">
-                      <% if assignment.completed %>
-                        <div class="flex items-center gap-2">
-                          <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">Completed</span>
-                          <% if assignment.approved.nil? %>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Awaiting approval</span>
-                          <% elsif assignment.approved == true %>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-800">Approved</span>
+                      <% latest = assignment.latest_attempt %>
+                      <% if assignment.approved == true %>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">Completed ✓</span>
+                      <% elsif latest&.status_pending? %>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Awaiting review</span>
+                      <% elsif latest&.status_rejected? %>
+                        <div class="flex flex-col items-end gap-1">
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Rejected</span>
+                          <% if latest.parent_note.present? %>
+                            <p class="text-xs text-red-600 text-right max-w-[120px]"><%= latest.parent_note %></p>
                           <% end %>
+                          <%= link_to 'Try Again', new_chore_attempt_path(chore_assignment_id: assignment.id), class: 'btn btn-primary text-xs py-1 px-3' %>
                         </div>
+                      <% elsif assignment.require_photo? %>
+                        <%= link_to 'Mark Done', new_chore_attempt_path(chore_assignment_id: assignment.id), class: 'btn btn-primary' %>
                       <% else %>
-                        <%= button_to mark_complete_chore_assignment_path(assignment), method: :post, class: "btn btn-primary", form: { data: { turbo: false } } do %>
+                        <%= button_to chore_attempts_path, method: :post, params: { chore_assignment_id: assignment.id }, class: 'btn btn-primary', form: { data: { turbo: false } } do %>
                           Mark Done
                         <% end %>
                       <% end %>
@@ -103,14 +109,18 @@
                       <div class="text-xs text-gray-500 mt-1">Scheduled: <%= l(assignment.scheduled_on, format: :long) %></div>
                     </div>
                     <div class="flex items-center gap-2">
-                      <% if assignment.completed %>
-                        <div class="flex items-center gap-2">
-                          <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm">Completed</span>
-                          <% if assignment.approved.nil? %>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Awaiting approval</span>
-                          <% elsif assignment.approved == false %>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Rejected</span>
+                      <% latest = assignment.latest_attempt %>
+                      <% if assignment.approved == true %>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">Completed ✓</span>
+                      <% elsif latest&.status_pending? %>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Awaiting review</span>
+                      <% elsif latest&.status_rejected? %>
+                        <div class="flex flex-col items-end gap-1">
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Rejected</span>
+                          <% if latest.parent_note.present? %>
+                            <p class="text-xs text-red-600 text-right max-w-[120px]"><%= latest.parent_note %></p>
                           <% end %>
+                          <%= link_to 'Try Again', new_chore_attempt_path(chore_assignment_id: assignment.id), class: 'btn btn-primary text-xs py-1 px-3' %>
                         </div>
                       <% else %>
                         <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm">Upcoming</span>

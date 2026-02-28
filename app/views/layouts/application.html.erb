@@ -30,32 +30,23 @@
             <!-- X (shown when open) -->
             <svg class="nav-close-icon hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
-          <% if parent_signed_in? %>
-            <div class="hidden md:flex md:items-center md:gap-4">
-              <%= link_to admin_root_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Dashboard<% end %>
-              <%= link_to children_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Children<% end %>
-              <%= link_to chores_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Chores<% end %>
-              <%= link_to chore_assignments_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Assignments<% end %>
-              <%= link_to token_transactions_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Tokens<% end %>
-              <%= link_to games_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Games<% end %>
-              <%= link_to edit_parent_path(current_parent), class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition" do %>Settings<% end %>
+          <% if admin_user_signed_in? %>
+            <div class="flex items-center gap-3">
+              <%= link_to super_admin_root_path, class: "px-4 py-2 rounded-full bg-red-50 text-red-700 hover:bg-red-100 font-semibold transition" do %>Dashboard<% end %>
+              <%= link_to super_admin_parents_path, class: "px-4 py-2 rounded-full bg-red-50 text-red-700 hover:bg-red-100 font-semibold transition" do %>Parents<% end %>
+              <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wide">Super Admin</span>
+              <%= link_to "Sign Out", destroy_admin_user_session_path, data: { turbo_method: :delete }, class: "px-5 py-2 rounded-full bg-red-600 text-white hover:bg-red-700 font-semibold transition-all duration-200 shadow-sm" %>
             </div>
-            <span class="hidden md:inline text-gray-700 font-medium"><%= current_parent.name %></span>
-            <div class="hidden md:inline">
-              <%= button_to destroy_parent_session_path, method: :delete, class: "px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold text-lg transition-all duration-200 shadow-sm" do %>Sign Out<% end %>
-            </div>
-            <!-- Mobile menu content (rendered when hamburger toggled) -->
-            <div data-nav-target="menu" class="hidden md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
-              <div class="px-6 py-4 space-y-2">
-                <%= link_to admin_root_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Dashboard<% end %>
-                <%= link_to children_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Children<% end %>
-                <%= link_to chores_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Chores<% end %>
-                <%= link_to chore_assignments_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Assignments<% end %>
-                <%= link_to token_transactions_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Tokens<% end %>
-                <%= link_to games_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Games<% end %>
-                <%= link_to edit_parent_path(current_parent), class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Settings<% end %>
-                <div class="pt-2"><%= button_to destroy_parent_session_path, method: :delete, class: 'w-full text-left px-3 py-2 rounded bg-blue-600 text-white' do %>Sign Out<% end %></div>
-              </div>
+          <% elsif parent_signed_in? %>
+            <div class="flex flex-wrap items-center gap-2">
+              <%= link_to admin_root_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Dashboard<% end %>
+              <%= link_to children_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Children<% end %>
+              <%= link_to chores_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Chores<% end %>
+              <%= link_to chore_assignments_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Assignments<% end %>
+              <%= link_to token_transactions_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Tokens<% end %>
+              <%= link_to games_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Games<% end %>
+              <%= link_to edit_parent_path(current_parent), class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Settings<% end %>
+              <%= link_to "Sign Out", destroy_parent_session_path, data: { turbo_method: :delete }, class: "px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold transition-all duration-200 shadow-sm" %>
             </div>
           <% elsif session[:child_id] %>
             <% child = Child.find(session[:child_id]) %>

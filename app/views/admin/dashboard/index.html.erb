@@ -6,23 +6,17 @@
   </div>
 
   <!-- Quick Stats Row -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
       <div class="text-blue-600 text-3xl mb-2">👶</div>
       <p class="text-gray-600 text-sm">Total Children</p>
       <p class="text-3xl font-bold text-gray-800"><%= @children.count %></p>
     </div>
     
-    <div class="card bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
-      <div class="text-purple-600 text-3xl mb-2">✓</div>
-      <p class="text-gray-600 text-sm">Chores Today</p>
-      <p class="text-3xl font-bold text-gray-800"><%= @chore_assignments_today.count %></p>
-    </div>
-    
     <div class="card bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
       <div class="text-green-600 text-3xl mb-2">⏳</div>
       <p class="text-gray-600 text-sm">Pending Approval</p>
-      <p class="text-3xl font-bold text-gray-800"><%= @chore_assignments_today.where(completed: true, approved: false).count %></p>
+      <p class="text-3xl font-bold text-gray-800"><%= @pending_attempts.count %></p>
     </div>
     
     <div class="card bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500">
@@ -38,167 +32,145 @@
       <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
         <span class="text-2xl">⏳</span> Chores Awaiting Approval
       </h2>
-      <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold"><%= @pending_approvals.count %> pending</span>
+      <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold"><%= @pending_attempts.count %> pending</span>
     </div>
 
-    <% if @pending_approvals.any? %>
-      <%= form_with url: bulk_update_chore_assignments_path, method: :post do %>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead>
-              <tr class="border-b-2 border-gray-200">
-                <th class="px-4 py-2"><input type="checkbox" id="select_all_pending" /></th>
-                <th class="text-left px-4 py-2 font-semibold">Child</th>
-                <th class="text-left px-4 py-2 font-semibold">Chore</th>
-                <th class="text-left px-4 py-2 font-semibold">Scheduled</th>
-                <th class="text-left px-4 py-2 font-semibold">Completed</th>
-                <th class="text-right px-4 py-2 font-semibold">Actions</th>
+    <% if @pending_attempts.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b-2 border-gray-200">
+              <th class="text-left px-4 py-2 font-semibold">Photo</th>
+              <th class="text-left px-4 py-2 font-semibold">Child</th>
+              <th class="text-left px-4 py-2 font-semibold">Chore</th>
+              <th class="text-left px-4 py-2 font-semibold">AI Verdict</th>
+              <th class="text-left px-4 py-2 font-semibold">Scheduled</th>
+              <th class="text-left px-4 py-2 font-semibold">Submitted</th>
+              <th class="text-right px-4 py-2 font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @pending_attempts.each do |attempt| %>
+              <%
+                previous_attempts = attempt.chore_assignment.chore_attempts
+                                      .reject { |a| a.id == attempt.id }
+                                      .sort_by(&:created_at).reverse
+              %>
+              <tr class="border-b hover:bg-gray-50" id="attempt_<%= attempt.id %>">
+                <td class="px-4 py-3">
+                  <% if attempt.photo.attached? %>
+                    <%= image_tag attempt.photo, class: 'h-16 w-16 object-cover rounded-lg border', title: 'Click to enlarge', style: 'cursor:pointer', onclick: "window.open(this.src,'_blank')" %>
+                  <% else %>
+                    <span class="text-gray-400 text-xs">No photo</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 font-medium text-gray-800"><%= attempt.child.name %></td>
+                <td class="px-4 py-3 text-gray-700">
+                  <%= attempt.chore.name %>
+                  <% if previous_attempts.any? %>
+                    <p class="mt-1">
+                      <span class="text-xs text-orange-600 font-medium">
+                        <%= previous_attempts.count %> previous <%= previous_attempts.count == 1 ? 'attempt' : 'attempts' %>
+                      </span>
+                    </p>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 align-top">
+                  <% if attempt.ai_verdict == 'APPROVED' %>
+                    <span class="inline-block bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded">Approved</span>
+                    <% if attempt.ai_message.present? %>
+                      <p class="text-xs text-green-700 mt-1 italic"><%= attempt.ai_message %></p>
+                    <% end %>
+                  <% elsif attempt.ai_verdict == 'REJECTED' %>
+                    <span class="inline-block bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded">Rejected</span>
+                    <% if attempt.ai_message.present? %>
+                      <p class="text-xs text-red-700 mt-1 italic"><%= attempt.ai_message %></p>
+                    <% end %>
+                  <% elsif attempt.ai_verdict == 'NEEDS_REVIEW' %>
+                    <span class="inline-block bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-1 rounded">Unclear</span>
+                    <% if attempt.ai_message.present? %>
+                      <p class="text-xs text-yellow-700 mt-1 italic"><%= attempt.ai_message %></p>
+                    <% end %>
+                  <% else %>
+                    <span class="text-xs text-gray-400">Not analyzed</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 text-gray-600 text-sm"><%= attempt.chore_assignment.scheduled_on.present? ? l(attempt.chore_assignment.scheduled_on, format: :long) : '—' %></td>
+                <td class="px-4 py-3 text-gray-600 text-sm"><%= l(attempt.created_at, format: :long) %></td>
+                <td class="px-4 py-3 text-right align-top">
+                  <div class="flex flex-col items-end gap-2">
+                    <%= button_to approve_chore_attempt_path(attempt), method: :post, class: 'px-3 py-1 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-medium' do %>Approve<% end %>
+                    <button type="button"
+                            class="px-3 py-1 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium"
+                            onclick="document.getElementById('reject_form_<%= attempt.id %>').classList.toggle('hidden')">
+                      Reject
+                    </button>
+                  </div>
+                  <!-- Inline reject form -->
+                  <div id="reject_form_<%= attempt.id %>" class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-left">
+                    <%= form_with url: reject_chore_attempt_path(attempt), method: :post do |f| %>
+                      <label class="block text-xs font-medium text-red-700 mb-1">Reason (optional)</label>
+                      <textarea name="parent_note" rows="2" class="w-full text-sm border border-red-200 rounded p-1 mb-2 resize-none" placeholder="e.g. The dishes still have food on them"></textarea>
+                      <div class="flex gap-2">
+                        <%= f.submit 'Confirm Reject', class: 'px-3 py-1 bg-red-600 text-white text-xs rounded font-medium' %>
+                        <button type="button" class="px-3 py-1 text-xs text-gray-600 hover:underline"
+                                onclick="document.getElementById('reject_form_<%= attempt.id %>').classList.add('hidden')">Cancel</button>
+                      </div>
+                    <% end %>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <% @pending_approvals.each do |ca| %>
-                <tr class="border-b hover:bg-gray-50">
-                  <td class="px-4 py-2"><input type="checkbox" name="assignment_ids[]" value="<%= ca.id %>" class="pending_checkbox" /></td>
-                  <td class="px-4 py-2"><%= ca.child.name %></td>
-                  <td class="px-4 py-2"><%= ca.chore.name %></td>
-                  <td class="px-4 py-2"><%= ca.scheduled_on.present? ? l(ca.scheduled_on, format: :long) : '&mdash;'.html_safe %></td>
-                  <td class="px-4 py-2"><%= ca.completed_at.present? ? l(ca.completed_at, format: :long) : l(ca.updated_at, format: :long) %></td>
-                  <td class="px-4 py-2 text-right">
-                    <%= button_to approve_chore_assignment_path(ca), method: :post, class: 'px-3 py-1 rounded bg-green-500 text-white text-sm mr-2' do %>Approve<% end %>
-                    <%= button_to reject_chore_assignment_path(ca), method: :post, class: 'px-3 py-1 rounded bg-red-500 text-white text-sm' do %>Reject<% end %>
+              <% if previous_attempts.any? %>
+                <tr class="bg-orange-50 border-b">
+                  <td colspan="7" class="px-4 py-2">
+                    <details class="text-sm">
+                      <summary class="cursor-pointer text-orange-700 font-medium text-xs select-none">
+                        View <%= previous_attempts.count %> previous <%= previous_attempts.count == 1 ? 'attempt' : 'attempts' %>
+                      </summary>
+                      <div class="mt-2 space-y-2 pl-2 border-l-2 border-orange-200">
+                        <% previous_attempts.each do |prev| %>
+                          <div class="flex items-start gap-3 py-1">
+                            <% if prev.photo.attached? %>
+                              <%= image_tag prev.photo, class: 'h-12 w-12 object-cover rounded border flex-shrink-0', style: 'cursor:pointer', onclick: "window.open(this.src,'_blank')" %>
+                            <% else %>
+                              <div class="h-12 w-12 bg-gray-100 rounded border flex items-center justify-center flex-shrink-0">
+                                <span class="text-gray-400 text-xs">none</span>
+                              </div>
+                            <% end %>
+                            <div>
+                              <p class="text-xs text-gray-500"><%= l(prev.created_at, format: :long) %></p>
+                              <% if prev.status_rejected? %>
+                                <% if prev.ai_verdict == 'REJECTED' %>
+                                  <p class="text-xs text-red-700">
+                                    <span class="font-medium">AI rejected:</span>
+                                    <%= prev.ai_message.present? ? prev.ai_message : 'No reason given' %>
+                                  </p>
+                                <% elsif prev.parent_note.present? %>
+                                  <p class="text-xs text-red-700">
+                                    <span class="font-medium">Parent rejected:</span>
+                                    <%= prev.parent_note %>
+                                  </p>
+                                <% else %>
+                                  <p class="text-xs text-red-600 italic">Rejected — no reason given</p>
+                                <% end %>
+                              <% else %>
+                                <span class="text-xs text-gray-500 capitalize"><%= prev.status %></span>
+                              <% end %>
+                            </div>
+                          </div>
+                        <% end %>
+                      </div>
+                    </details>
                   </td>
                 </tr>
               <% end %>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mt-4 flex items-center gap-3">
-          <select name="bulk_action" class="px-3 py-2 border rounded">
-            <option value="approve">Approve selected</option>
-            <option value="delete">Delete selected</option>
-          </select>
-          <%= submit_tag 'Apply', class: 'px-4 py-2 bg-blue-600 text-white rounded' %>
-        </div>
-      <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     <% else %>
       <p class="text-gray-600 text-center py-8">🎉 All chores approved! Great job!</p>
     <% end %>
-  </div>
-
-  <!-- Section 2: Today's Chores Overview -->
-  <div class="card">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-      <span class="text-2xl">📋</span> Today's Chores
-    </h2>
-    
-    <div class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b-2 border-gray-200">
-            <th class="text-left px-4 py-3 font-semibold text-gray-700">Child</th>
-            <th class="text-left px-4 py-3 font-semibold text-gray-700">Chore</th>
-            <th class="text-center px-4 py-3 font-semibold text-gray-700">Completed</th>
-            <th class="text-center px-4 py-3 font-semibold text-gray-700">Approved</th>
-            <th class="text-right px-4 py-3 font-semibold text-gray-700">Reward</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @chore_assignments_today.each do |ca| %>
-            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-              <td class="px-4 py-3 font-semibold text-gray-800">
-                <div class="flex items-center gap-2">
-                  <div class="w-8 h-8 bg-purple-200 rounded-full"></div>
-                  <%= ca.child.name %>
-                </div>
-              </td>
-              <td class="px-4 py-3 text-gray-700"><%= ca.chore.name %></td>
-              <td class="px-4 py-3 text-center">
-                <% if ca.completed %>
-                  <span class="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">✓ Yes</span>
-                <% else %>
-                  <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">⧖ Pending</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-center">
-                <% if ca.approved %>
-                  <span class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">✓ Yes</span>
-                <% else %>
-                  <span class="inline-block bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold" >⧖ Awaiting</span>
-                <% end %>
-              </td>
-              <td class="px-4 py-3 text-right">
-                <span class="inline-block bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-semibold"><%= ca.chore.token_amount %> 🪙</span>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Section 3: Child Token Balances -->
-  <div class="card">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-      <span class="text-2xl">💰</span> Child Token Balances
-    </h2>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <% @children.each do |child| %>
-        <div class="card bg-gradient-to-br from-gray-50 to-white">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 bg-purple-200 rounded-full"></div>
-              <div>
-                <p class="font-semibold text-gray-800"><%= child.name %></p>
-                <p class="text-sm text-gray-600">Age <%= child.age %></p>
-              </div>
-            </div>
-            <p class="text-3xl font-bold text-orange-600"><%= child.token_balance %></p>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-            <% max_tokens = 100 %>
-            <% progress = (child.token_balance.to_f / max_tokens) * 100 %>
-            <div class="bg-gradient-to-r from-orange-400 to-orange-600 h-full" style="width: <%= [progress, 100].min %>%"></div>
-          </div>
-          <p class="text-xs text-gray-500 mt-2"><%= child.token_balance %> / 100 tokens</p>
-        </div>
-      <% end %>
-    </div>
-  </div>
-
-  <!-- Section 4: Weekly Overview -->
-  <div class="card">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-      <span class="text-2xl">📅</span> Weekly Overview
-    </h2>
-    
-    <div class="space-y-3">
-      <% days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %>
-      <% days.each do |day| %>
-        <% day_assignments = ChoreAssignment.where(day: day) %>
-        <% completed_count = day_assignments.where(completed: true).count %>
-        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-          <div class="flex-1">
-            <p class="font-semibold text-gray-800"><%= day %></p>
-            <p class="text-sm text-gray-600"><%= day_assignments.count %> chores assigned</p>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="text-center">
-              <p class="text-2xl font-bold text-green-600"><%= completed_count %></p>
-              <p class="text-xs text-gray-600">completed</p>
-            </div>
-            <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-              <% if day_assignments.count > 0 %>
-                <p class="text-sm font-bold text-blue-600"><%= ((completed_count.to_f / day_assignments.count) * 100).to_i %>%</p>
-              <% else %>
-                <p class="text-sm font-bold text-gray-400">-</p>
-              <% end %>
-            </div>
-          </div>
-        </div>
-      <% end %>
-    </div>
   </div>
 
   <!-- Action Buttons -->

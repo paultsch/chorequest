@@ -1,63 +1,85 @@
 <% if notice %>
-  <div class="p-3 bg-green-50 border-l-4 border-green-500 text-green-700 rounded mb-4"><%= notice %></div>
+  <div class="p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-lg mb-6"><%= notice %></div>
 <% end %>
 
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-2xl font-bold">Chores</h1>
-  <div class="flex items-center gap-3">
-    <%= link_to 'New chore', new_chore_path, class: 'btn btn-primary' %>
+<div class="space-y-8">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-4xl font-bold text-gray-800 mb-1">Chores</h1>
+      <p class="text-gray-600">Manage your family's chore library</p>
+    </div>
+    <% if current_parent %>
+      <%= link_to '+ New Chore', new_chore_path, class: "px-5 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-semibold transition-all" %>
+    <% end %>
+  </div>
+
+  <!-- Chores Table -->
+  <div class="card">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <span class="text-2xl">📋</span> All Chores
+      </h2>
+      <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-semibold"><%= @chores.count %> chores</span>
+    </div>
+
+    <% if @chores.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b-2 border-gray-200">
+              <th class="text-left px-4 py-2 font-semibold">
+                Name
+                <%= link_to '↕', chores_path(sort: 'name', direction: (params[:sort] == 'name' && params[:direction] == 'desc') ? 'asc' : 'desc'), class: 'ml-1 text-sm text-gray-400 hover:text-gray-600' %>
+              </th>
+              <th class="text-left px-4 py-2 font-semibold">Description</th>
+              <th class="text-left px-4 py-2 font-semibold">Definition of Done</th>
+              <th class="text-left px-4 py-2 font-semibold">
+                Tokens
+                <%= link_to '↕', chores_path(sort: 'token_amount', direction: (params[:sort] == 'token_amount' && params[:direction] == 'desc') ? 'asc' : 'desc'), class: 'ml-1 text-sm text-gray-400 hover:text-gray-600' %>
+              </th>
+              <th class="text-left px-4 py-2 font-semibold">Assignments</th>
+              <% if current_parent %>
+                <th class="text-right px-4 py-2 font-semibold">Actions</th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @chores.each do |chore| %>
+              <tr class="border-b hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-800"><%= chore.name %></td>
+                <td class="px-4 py-3 text-sm text-gray-600 max-w-xs"><%= truncate(chore.description.to_s, length: 100) %></td>
+                <td class="px-4 py-3 text-sm text-gray-600 max-w-xs"><%= truncate(chore.definition_of_done.to_s, length: 100) %></td>
+                <td class="px-4 py-3">
+                  <% if current_parent %>
+                    <%= form_with model: chore, url: chore_path(chore), method: :patch, local: true do |f| %>
+                      <div class="flex items-center gap-2">
+                        <%= f.number_field :token_amount, value: chore.token_amount, class: 'w-20 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-400' %>
+                        <%= f.submit 'Save', class: 'px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium border border-gray-300 cursor-pointer' %>
+                      </div>
+                    <% end %>
+                  <% else %>
+                    <span class="inline-block bg-yellow-100 text-yellow-700 text-sm font-semibold px-2 py-1 rounded"><%= chore.token_amount %></span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 text-gray-600"><%= chore.chore_assignments.size %></td>
+                <% if current_parent %>
+                  <td class="px-4 py-3 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <%= link_to 'View', chore_path(chore), class: 'px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium' %>
+                      <%= link_to 'Edit', edit_chore_path(chore), class: 'px-3 py-1 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-sm font-medium' %>
+                      <%= link_to 'Assign', new_chore_assignment_path(chore_id: chore.id), class: 'px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-medium' %>
+                      <%= button_to 'Delete', chore_path(chore), method: :delete, data: { confirm: 'Delete this chore?' }, class: 'px-3 py-1 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium cursor-pointer' %>
+                    </div>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-gray-600 text-center py-8">No chores yet. Create your first chore to get started!</p>
+    <% end %>
   </div>
 </div>
-
-<table class="min-w-full bg-white border">
-  <thead>
-    <tr>
-      <th class="px-4 py-2 text-left">Name
-        <%= link_to '↕', chores_path(sort: 'name', direction: (params[:sort] == 'name' && params[:direction] == 'desc') ? 'asc' : 'desc'), class: 'ml-2 text-sm text-gray-500' %>
-      </th>
-      <th class="px-4 py-2 text-left">Description</th>
-      <th class="px-4 py-2 text-left">Definition of done</th>
-      <th class="px-4 py-2 text-left">Token amount
-        <%= link_to '↕', chores_path(sort: 'token_amount', direction: (params[:sort] == 'token_amount' && params[:direction] == 'desc') ? 'asc' : 'desc'), class: 'ml-2 text-sm text-gray-500' %>
-      </th>
-      <th class="px-4 py-2 text-left">Recurrence</th>
-      <th class="px-4 py-2 text-left"># Assignments</th>
-      <th class="px-4 py-2 text-left">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @chores.each do |chore| %>
-      <tr class="border-t">
-        <td class="px-4 py-3"><%= chore.name %></td>
-        <td class="px-4 py-3 text-sm text-gray-600"><%= truncate(chore.description.to_s, length: 120) %></td>
-        <td class="px-4 py-3 text-sm text-gray-600"><%= truncate(chore.definition_of_done.to_s, length: 120) %></td>
-        <td class="px-4 py-3">
-          <% if current_parent %>
-            <%= form_with model: chore, url: chore_path(chore), method: :patch, local: true do |f| %>
-              <div class="flex items-center gap-2">
-                <%= f.number_field :token_amount, value: chore.token_amount, class: 'w-20 p-1 border rounded' %>
-                <%= f.submit 'Save', class: 'btn btn-sm' %>
-              </div>
-            <% end %>
-          <% else %>
-            <%= chore.token_amount %>
-          <% end %>
-        </td>
-        <td class="px-4 py-3"><%= chore.recurrence %></td>
-        <td class="px-4 py-3"><%= chore.chore_assignments.size %></td>
-        <td class="px-4 py-3">
-          <% if current_parent %>
-            <div class="flex items-center gap-2">
-              <%= link_to 'View', chore_path(chore), class: 'btn btn-secondary btn-sm' %>
-              <%= link_to 'Edit', edit_chore_path(chore), class: 'btn btn-sm' %>
-              <%= button_to 'Delete', chore_path(chore), method: :delete, data: { confirm: 'Delete this chore?' }, class: 'btn btn-danger btn-sm' %>
-              <%= link_to 'Assign', new_chore_assignment_path(chore_id: chore.id), class: 'btn btn-outline btn-sm' %>
-            </div>
-          <% else %>
-            <%= link_to 'View', chore_path(chore), class: 'text-sm text-indigo-600' %>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>

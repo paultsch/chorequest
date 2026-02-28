@@ -16,19 +16,19 @@ TokenTransaction.destroy_all
 Game.destroy_all
 GameSession.destroy_all
 
-parent1 = Parent.create!(name: 'Alice Parent', email: 'alice@example.com', password: 'password', is_admin: true)
-parent2 = Parent.create!(name: 'Bob Parent', email: 'bob@example.com', password: 'password', is_admin: false)
+parent1 = Parent.create!(name: 'Alice Parent', email: 'alice@example.com', password: 'password')
+parent2 = Parent.create!(name: 'Bob Parent', email: 'bob@example.com', password: 'password')
 
 child1 = parent1.children.create!(name: 'Sam', age: 8, pin_code: '1234')
 child2 = parent1.children.create!(name: 'Lily', age: 6, pin_code: '2345')
 child3 = parent2.children.create!(name: 'Max', age: 10, pin_code: '3456')
 
 chores = [
-	{ name: 'Make Bed', description: 'Tidy your bed', definition_of_done: 'Sheets straight, pillows fluffed', token_amount: 5, recurrence: 'daily' },
-	{ name: 'Brush Teeth', description: 'Brush for 2 minutes', definition_of_done: 'Teeth brushed', token_amount: 2, recurrence: 'daily' },
-	{ name: 'Set Table', description: 'Put plates and cutlery', definition_of_done: 'Table set', token_amount: 3, recurrence: 'daily' },
-	{ name: 'Homework', description: 'Complete homework', definition_of_done: 'Homework finished', token_amount: 10, recurrence: 'weekdays' },
-	{ name: 'Tidy Toys', description: 'Put toys away', definition_of_done: 'Toy box tidy', token_amount: 4, recurrence: 'daily' }
+	{ name: 'Make Bed', description: 'Tidy your bed', definition_of_done: 'Sheets straight, pillows fluffed', token_amount: 5 },
+	{ name: 'Brush Teeth', description: 'Brush for 2 minutes', definition_of_done: 'Teeth brushed', token_amount: 2 },
+	{ name: 'Set Table', description: 'Put plates and cutlery', definition_of_done: 'Table set', token_amount: 3 },
+	{ name: 'Homework', description: 'Complete homework', definition_of_done: 'Homework finished', token_amount: 10 },
+	{ name: 'Tidy Toys', description: 'Put toys away', definition_of_done: 'Toy box tidy', token_amount: 4 }
 ]
 
 chores.each { |c| Chore.create!(c) }
@@ -39,3 +39,18 @@ game = Game.create!(name: 'Pong', description: 'Classic pong game', token_per_mi
 TokenTransaction.create!(child: child1, amount: 20, description: 'Initial grant')
 TokenTransaction.create!(child: child2, amount: 15, description: 'Initial grant')
 TokenTransaction.create!(child: child3, amount: 10, description: 'Initial grant')
+
+# Create a default super-admin if Admins table exists
+begin
+  if ActiveRecord::Base.connection.table_exists?('admins')
+    email = ENV.fetch('SUPER_ADMIN_EMAIL', 'superadmin@example.com')
+    pw = ENV.fetch('SUPER_ADMIN_PASSWORD', 'password')
+    AdminUser.find_or_create_by!(email: email) do |a|
+      a.password = pw
+      a.password_confirmation = pw
+      a.name = 'Super Admin'
+    end
+  end
+rescue => e
+  Rails.logger.warn "Skipping super-admin seed: #{e.message}"
+end

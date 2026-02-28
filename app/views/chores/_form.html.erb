@@ -1,4 +1,4 @@
-<%= form_with(model: chore, local: true, class: 'space-y-6') do |form| %>
+<%= form_with(model: chore, local: true, class: 'space-y-6', data: { controller: 'improve-definition' }) do |form| %>
   <% if chore.errors.any? %>
     <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
       <h2 class="font-semibold"><%= pluralize(chore.errors.count, "error") %> prohibited this chore from being saved:</h2>
@@ -12,28 +12,32 @@
 
   <div>
     <%= form.label :name, class: 'block text-sm font-medium text-gray-700' %>
-    <%= form.text_field :name, class: 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400' %>
+    <%= form.text_field :name, class: 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400', data: { 'improve-definition-target': 'choreName' } %>
   </div>
 
   <div>
     <%= form.label :description, class: 'block text-sm font-medium text-gray-700' %>
-    <%= form.text_area :description, class: 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400', rows: 4 %>
+    <%= form.text_area :description, class: 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400', rows: 4, data: { 'improve-definition-target': 'description' } %>
   </div>
 
   <div>
-    <%= form.label :definition_of_done, class: 'block text-sm font-medium text-gray-700' %>
-    <%= form.text_area :definition_of_done, class: 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400', rows: 3 %>
+    <div class="flex items-center justify-between">
+      <%= form.label :definition_of_done, class: 'block text-sm font-medium text-gray-700' %>
+      <button type="button"
+              class="text-xs text-purple-600 hover:text-purple-800 underline disabled:opacity-40 disabled:cursor-not-allowed"
+              data-improve-definition-target="button"
+              data-action="click->improve-definition#improve">
+        Improve with AI
+      </button>
+    </div>
+    <%= form.text_area :definition_of_done, class: 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400', rows: 3, data: { 'improve-definition-target': 'definitionOfDone' } %>
+    <span class="text-xs text-red-500 mt-1" data-improve-definition-target="status"></span>
   </div>
 
   <div>
     <%= form.label :token_amount, class: 'block text-sm font-medium text-gray-700' %>
     <%= form.number_field :token_amount, min: 0, max: 200, step: 1, class: 'mt-1 block w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400' %>
     <p class="text-xs text-gray-500 mt-1">Enter a token value between 0 and 200.</p>
-  </div>
-
-  <div>
-    <%= form.label :recurrence, class: 'block text-sm font-medium text-gray-700' %>
-    <%= form.select :recurrence, options_for_select([['Daily','daily'],['Weekly','weekly'],['Monthly','monthly']], chore.recurrence), { include_blank: 'Select recurrence' }, class: 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400' %>
   </div>
 
   <div>

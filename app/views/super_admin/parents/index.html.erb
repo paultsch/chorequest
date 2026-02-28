@@ -1,0 +1,57 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-4xl font-bold text-gray-800 mb-2">Parents</h1>
+      <p class="text-gray-600">All registered parent accounts on the platform</p>
+    </div>
+    <%= link_to super_admin_root_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold transition" do %>
+      &larr; Dashboard
+    <% end %>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b-2 border-gray-200">
+            <th class="text-left px-4 py-3 font-semibold text-gray-700">ID</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-700">Name</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-700">Email</th>
+            <th class="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
+            <th class="text-right px-4 py-3 font-semibold text-gray-700">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @parents.each do |p| %>
+            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+              <td class="px-4 py-3 text-gray-500 text-sm">#<%= p.id %></td>
+              <td class="px-4 py-3 font-semibold text-gray-800"><%= p.name.presence || "—" %></td>
+              <td class="px-4 py-3 text-gray-700"><%= p.email %></td>
+              <td class="px-4 py-3">
+                <% if p.archived_at.present? %>
+                  <span class="inline-block bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">Archived</span>
+                <% else %>
+                  <span class="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Active</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-right space-x-1">
+                <%= link_to super_admin_parent_path(p), class: "px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm font-semibold transition" do %>View<% end %>
+                <%= link_to edit_super_admin_parent_path(p), class: "px-3 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-semibold transition" do %>Edit<% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if @parents.empty? %>
+      <p class="text-gray-500 text-center py-8">No parents found.</p>
+    <% end %>
+  </div>
+
+  <div class="mt-2">
+    <%= paginate @parents %>
+  </div>
+</div>

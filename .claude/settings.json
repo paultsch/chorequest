@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(///wsl$/Ubuntu-22.04/home/paul/projects/chorequest/app/controllers/**)",
+      "Read(///wsl$/Ubuntu-22.04/home/paul/projects/chorequest/app/views/**)"
+    ]
+  }
+}

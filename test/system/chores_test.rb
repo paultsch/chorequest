@@ -17,7 +17,6 @@ class ChoresTest < ApplicationSystemTestCase
     fill_in "Definition of done", with: @chore.definition_of_done
     fill_in "Description", with: @chore.description
     fill_in "Name", with: @chore.name
-    fill_in "Recurrence", with: @chore.recurrence
     fill_in "Token amount", with: @chore.token_amount
     click_on "Create Chore"
 
@@ -32,7 +31,6 @@ class ChoresTest < ApplicationSystemTestCase
     fill_in "Definition of done", with: @chore.definition_of_done
     fill_in "Description", with: @chore.description
     fill_in "Name", with: @chore.name
-    fill_in "Recurrence", with: @chore.recurrence
     fill_in "Token amount", with: @chore.token_amount
     click_on "Update Chore"
 

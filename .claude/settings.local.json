@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(///wsl$/Ubuntu-22.04/home/paul/projects/chorequest/app/**)",
+      "Read(///wsl$/Ubuntu-22.04/home/paul/projects/chorequest/app/views/**)",
+      "Read(///wsl$/Ubuntu-22.04/home/paul/projects/chorequest/config/**)",
+      "Read(///wsl$/Ubuntu-22.04/home/paul/projects/chorequest/**)",
+      "Read(///wsl$/Ubuntu-22.04/home/paul/projects/chorequest/log/**)"
+    ],
+    "additionalDirectories": [
+      "\\home\\paul\\projects\\chorequest\\app\\controllers",
+      "\\\\wsl$\\Ubuntu-22.04\\home\\paul\\projects\\chorequest\\app\\controllers",
+      "\\home\\paul\\projects\\chorequest\\db\\migrate",
+      "\\\\wsl$\\Ubuntu-22.04\\home\\paul\\projects\\chorequest\\db\\migrate",
+      "\\home\\paul\\projects\\chorequest\\app\\models",
+      "\\\\wsl$\\Ubuntu-22.04\\home\\paul\\projects\\chorequest\\app\\models",
+      "\\home\\paul\\projects\\chorequest\\app\\views\\children",
+      "\\\\wsl$\\Ubuntu-22.04\\home\\paul\\projects\\chorequest\\app\\views\\children"
+    ]
+  }
+}

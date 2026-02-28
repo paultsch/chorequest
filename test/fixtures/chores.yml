@@ -5,11 +5,9 @@ one:
   description: MyText
   definition_of_done: MyText
   token_amount: 1
-  recurrence: MyString
 
 two:
   name: MyString
   description: MyText
   definition_of_done: MyText
   token_amount: 1
-  recurrence: MyString

@@ -5,10 +5,6 @@
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-bold">Games</h1>
   <div class="flex items-center gap-3">
-    <%# New game creation reserved for superadmin; hide for parents for now %>
-    <% if current_parent && current_parent.is_admin %>
-      <%= link_to 'New Game', new_game_path, class: 'btn btn-primary' %>
-    <% end %>
     <%= link_to (params[:sort] == 'token_per_minute' ? 'Sort: Cost' : 'Sort: Name'), games_path(sort: (params[:sort] == 'token_per_minute' ? 'name' : 'token_per_minute'), direction: (params[:direction] == 'desc' ? 'asc' : 'desc')), class: 'text-sm text-gray-600' %>
   </div>
 </div>
@@ -44,13 +40,8 @@
           <% else %>
             <%= link_to 'Play', game_path(game), target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
           <% end %>
-          <% if current_parent && current_parent.is_admin %>
-            <%= link_to 'Edit', edit_game_path(game), class: 'px-3 py-2 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 text-sm' %>
-            <%= button_to 'Delete', game_path(game), method: :delete, data: { confirm: 'Delete game?' }, class: 'px-3 py-2 rounded bg-red-500 text-white hover:bg-red-600 text-sm' %>
-          <% end %>
         </div>
       </div>
     </div>
   <% end %>
 </div>
-
