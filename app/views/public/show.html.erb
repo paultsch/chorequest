@@ -76,11 +76,13 @@
                       <p class="text-xs text-red-500 text-right max-w-[140px]"><%= latest.parent_note %></p>
                     <% end %>
                     <%= link_to 'Try Again', public_new_attempt_path(params[:token], assignment.id),
-                          class: 'mt-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700' %>
+                          class: 'mt-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700',
+                          data: { turbo_frame: "_top" } %>
                   </div>
                 <% elsif assignment.require_photo? %>
                   <%= link_to 'Mark Done', public_new_attempt_path(params[:token], assignment.id),
-                        class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700' %>
+                        class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700',
+                        data: { turbo_frame: "_top" } %>
                 <% else %>
                   <%= button_to public_create_attempt_path(params[:token]), method: :post,
                         params: { chore_assignment_id: assignment.id },
