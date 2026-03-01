@@ -193,7 +193,12 @@ class ChoreAssignmentsController < ApplicationController
     respond_to do |format|
       if @chore_assignment.update(chore_assignment_params)
         format.html { redirect_to @chore_assignment, notice: "Chore assignment was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @chore_assignment }
+        format.json {
+          render json: {
+            id:            @chore_assignment.id,
+            require_photo: @chore_assignment.require_photo?
+          }, status: :ok
+        }
       else
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @chore_assignment.errors, status: :unprocessable_entity }

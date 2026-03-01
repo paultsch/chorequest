@@ -22,6 +22,7 @@ Rails.application.routes.draw do
   post 'chore_attempts', to: 'chore_attempts#create', as: :chore_attempts
   post 'chore_attempts/:id/approve', to: 'chore_attempts#approve', as: :approve_chore_attempt
   post 'chore_attempts/:id/reject', to: 'chore_attempts#reject', as: :reject_chore_attempt
+  post 'chore_attempts/bulk_approve', to: 'chore_attempts#bulk_approve', as: :bulk_approve_chore_attempts
   resources :chores do
     collection do
       post :improve_definition

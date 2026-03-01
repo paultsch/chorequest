@@ -40,6 +40,29 @@ Rails 7.1 app that lets parents assign chores to children, who earn tokens redee
 - [ ] Chore assignments calendar: show chore names (or at least a count badge) on marked dates — dots alone don't tell parents what's scheduled
 - [ ] BUG: "Play Games" gate on children/show checks `completed: true` but should check `approved: true` — kids can bypass the gate by self-marking chores done before parent reviews
 - [ ] Assignment form: add "repeat weekly" checkbox to schedule a chore every week for N weeks without using the date range picker
+- [ ] Assignment form / chore settings: toggle to enable or disable AI photo analysis per chore assignment — some chores don't need AI review, others always should
+- [ ] Dashboard: per-child status row showing token balance, today's completion rate ("2/3 chores done"), and pending approval count badge
+- [ ] Dashboard: "Today at a Glance" panel — which children have submitted chores awaiting approval, who hasn't started today's chores, and any overdue/missed assignments
+- [ ] Nav: pending approval badge (red dot or count) on the Dashboard link so parents notice items without having to navigate there
+- [ ] Dashboard: bulk approve/reject UI — checkboxes per attempt + "Approve All" button (controller bulk_update action already exists, no UI exposes it)
+- [ ] Dashboard: lightbox for photo review instead of opening a new browser tab
+- [ ] Token transactions: per-child filter pills so parents with multiple kids can view one child's ledger at a time
+- [ ] Children index / show: one-tap "Copy Link" button for each child's public chore URL
+- [ ] Scheduler: show completion status on calendar chips (colored border or icon: done ✓ / pending review 🕐 / rejected ✗) — currently all chips look identical regardless of status
+- [ ] Scheduler month view: "+N more" overflow indicator when a day cell has more chips than fit — currently they silently clip
+- [ ] Children index: quick "Assign Chore" shortcut per child card to skip navigating to the scheduler
+- [ ] Scheduler: recurring assignment UI — backend already supports date-range bulk creation, but the drag-and-drop UI only supports dropping to one day at a time
+- [ ] Mobile scheduling: figure out the UX for toggling photo-required on chore assignments from a mobile device — the current desktop sidebar + drag-and-drop pattern doesn't translate well to touch; options include a bottom sheet, a long-press context menu on a chip, or a dedicated mobile scheduling flow
+- [ ] BUG: Parent hamburger menu is completely broken on mobile — the `data-nav-target="menu"` dropdown block is missing from the parent signed-in section in `application.html.erb`; logged-in parents on mobile have no way to navigate between pages
+- [ ] BUG: Child "Play" button in bottom nav doesn't sync with Turbo Frame polling — `todays_ready` is computed outside the turbo-frame so the bottom nav Play button stays locked even after the 15-second poll approves chores; child sees "Play!" in main content but a grayed-out button in the nav bar
+- [ ] BUG: Child bottom nav token balance is a non-interactive fake nav item — it looks tappable but does nothing; either link it to a token history screen or remove it from the nav bar
+- [ ] Nav: replace parent mobile hamburger with a 4-tab bottom navigation bar — Today (Dashboard, with pending badge), Kids (Children), Schedule (Assignments), More (sheet with Chores, Tokens, Settings, Sign Out); pending approval badge must be visible in the bottom bar at all times
+- [ ] Nav: slim parent top bar to logo-only on mobile — all nav moves to the bottom bar, freeing screen space for content; keep full top nav on md+ screens
+- [ ] Nav: add active state styling to all nav items — use `current_page?` or controller checks to highlight the current page with a filled icon or stronger color; neither parent nor child nav currently shows which page is active
+- [ ] Nav: hide footer on mobile — copyright text adds no value for a parent approving photos; add `hidden md:block` to the footer element
+- [ ] Nav: increase hamburger button tap target to minimum 44×44px (currently ~32px); also ensure all child bottom nav items use `flex-1` so they stretch to equal thirds rather than relying on padding for tap area
+- [ ] Nav: add shake animation + "Finish your chores first!" inline message when a child taps the locked Play button — currently tapping the disabled button is silently ignored, which reads as broken to a child
+- [ ] Nav: add `safe-area-inset-top` padding to the public child page main content wrapper for PWA mode on iOS — without it the status bar overlaps content when installed to home screen
 - [ ] [Marketing] Build a public landing page with above-the-fold headline ("Your Kids Earn Their Screen Time. No More Nagging."), a looping 8-second demo video of the photo-submission-to-game-unlock flow, and a "Start Free — No Credit Card" CTA button
 - [ ] [Marketing] Write and publish 4 SEO blog posts targeting high-intent long-tail keywords: "kids earn screen time for chores," "app that rewards kids for chores," "how to get kids to do chores without nagging," and "best chore apps for kids" — each 1,200–1,800 words with a natural ChoreQuest mention
 - [ ] [Marketing] Post a founder story on r/Parenting and r/daddit — a genuine "I built this for my own kids" post with a GIF or 30-second screen recording showing a child submitting a chore photo and unlocking game time (post Tuesday–Thursday 8–10 AM EST)

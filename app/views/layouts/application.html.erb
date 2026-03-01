@@ -21,7 +21,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-gradient-to-br from-white via-blue-50 to-blue-100 min-h-screen font-sans">
+  <body class="bg-gradient-to-br from-white via-blue-50 to-blue-100 min-h-screen font-sans" data-controller="lightbox">
     <!-- Wealthfront-Inspired Top Navigation -->
     <%# Hide top navigation on public child pages (token-based public view) %>
     <% unless controller.controller_name == 'public' %>
@@ -48,7 +48,14 @@
             </div>
           <% elsif parent_signed_in? %>
             <div class="flex flex-wrap items-center gap-2">
-              <%= link_to admin_root_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Dashboard<% end %>
+              <%= link_to admin_root_path, class: "relative px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>
+                Dashboard
+                <% if @pending_approvals_count&.> 0 %>
+                  <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center leading-none">
+                    <%= @pending_approvals_count > 9 ? '9+' : @pending_approvals_count %>
+                  </span>
+                <% end %>
+              <% end %>
               <%= link_to children_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Children<% end %>
               <%= link_to chores_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Chores<% end %>
               <%= link_to chore_assignments_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Assignments<% end %>
@@ -156,6 +163,19 @@
         <div class="text-gray-500 text-sm">&copy; <%= Time.now.year %> ChoreQuest. All rights reserved.</div>
       </div>
     </footer>
+  <%# Lightbox overlay — driven by lightbox_controller.js %>
+  <div data-lightbox-target="overlay"
+       data-action="click->lightbox#closeOnBackdrop"
+       class="hidden fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+    <button type="button"
+            data-action="click->lightbox#close"
+            class="absolute top-4 right-4 text-white text-3xl font-bold w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 transition">
+      &times;
+    </button>
+    <img data-lightbox-target="image" src="" alt="Chore photo"
+         class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+  </div>
+
   <%# PWA Service Worker registration.
       The 'serviceWorker' in navigator guard ensures this silently no-ops inside
       iOS WKWebView and Android WebViews used by Turbo Native — no conflict. %>

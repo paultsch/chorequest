@@ -74,6 +74,30 @@ class ChoreAttemptsController < ApplicationController
     redirect_back fallback_location: admin_root_path, notice: 'Attempt approved! Tokens granted.'
   end
 
+  def bulk_approve
+    ids = Array(params[:attempt_ids])
+    approved_count = 0
+
+    ids.each do |id|
+      attempt = ChoreAttempt.joins(chore_assignment: :child)
+                            .where(children: { parent_id: current_parent.id })
+                            .find_by(id: id)
+      next unless attempt&.status_pending?
+
+      attempt.update!(status: 'approved')
+      assignment = attempt.chore_assignment
+      assignment.update!(approved: true, completed: true, completed_at: attempt.updated_at)
+      TokenTransaction.create!(
+        child: attempt.child,
+        amount: attempt.chore.token_amount || 0,
+        description: "Chore approved: #{attempt.chore.name}"
+      )
+      approved_count += 1
+    end
+
+    redirect_to admin_root_path, notice: "#{approved_count} chore(s) approved!"
+  end
+
   def reject
     @attempt = find_attempt_for_parent
     unless @attempt

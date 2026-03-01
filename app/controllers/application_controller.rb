@@ -1,5 +1,6 @@
 class ApplicationController < ActionController::Base
 	before_action :configure_permitted_parameters, if: :devise_controller?
+	before_action :load_pending_approvals_count
 
 	protected
 
@@ -11,6 +12,15 @@ class ApplicationController < ActionController::Base
 
 	def after_sign_up_path_for(resource)
 		root_path
+	end
+
+	def load_pending_approvals_count
+		return unless parent_signed_in?
+		child_ids = current_parent.children.select(:id)
+		@pending_approvals_count = ChoreAttempt
+			.joins(:chore_assignment)
+			.where(chore_assignments: { child_id: child_ids }, status: 'pending')
+			.count
 	end
 
 	def after_sign_in_path_for(resource)

@@ -1,4 +1,5 @@
-<div class="max-w-3xl mx-auto py-8">
+<div class="max-w-3xl mx-auto py-6 pb-24">
+  <%# Flash messages %>
   <% if notice %>
     <div class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-700 rounded-lg"><%= notice %></div>
   <% end %>
@@ -6,97 +7,161 @@
     <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg"><%= alert %></div>
   <% end %>
 
-  <h1 class="text-2xl font-bold mb-1">Hi <%= @child.name %> — Today's Chores</h1>
-  <div class="text-sm text-gray-600 mb-4"><%= l(Date.current, format: :long) %></div>
+  <%# Confetti — fires when a chore was just approved (notice present + at least one approved) %>
+  <% if notice.present? && @assignments.any? { |a| a.approved == true } %>
+    <div data-controller="confetti"></div>
+  <% end %>
 
-  <% if @assignments.empty? %>
-    <div class="p-4 bg-gray-50 rounded">No chores for today. Great job!</div>
-  <% else %>
-    <div class="space-y-4">
-      <% @assignments.each do |assignment| %>
-        <div class="p-4 bg-white rounded shadow-sm flex items-center justify-between">
+  <h1 class="text-2xl font-bold mb-1">Hi <%= @child.name %> 👋</h1>
+  <div class="text-sm text-gray-500 mb-4"><%= l(Date.current, format: :long) %></div>
+
+  <%# Chore status section — auto-refreshes every 15s so verdicts appear without a page reload %>
+  <div data-controller="poll" data-poll-interval-value="15">
+    <turbo-frame id="chore_status" src="<%= public_child_path(params[:token]) %>">
+
+      <%# Token balance + progress bar %>
+      <% total          = @assignments.size %>
+      <% approved_count = @assignments.count { |a| a.approved == true } %>
+      <% pending_count  = @assignments.count { |a| a.latest_attempt&.status_pending? } %>
+      <% pct_approved   = total > 0 ? (approved_count * 100.0 / total).round : 0 %>
+
+      <div class="flex items-center justify-between mb-5 bg-white rounded-2xl shadow-sm px-4 py-3">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🪙</span>
           <div>
-            <div class="font-semibold"><%= assignment.chore&.name || 'Chore' %></div>
-            <div class="text-sm text-gray-600"><%= assignment.chore&.definition_of_done %></div>
-          </div>
-          <div>
-            <% latest = assignment.latest_attempt %>
-            <% if assignment.approved == true %>
-              <span class="px-3 py-1 rounded bg-green-100 text-green-800">Approved ✓</span>
-            <% elsif latest&.status_pending? %>
-              <span class="px-3 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">Awaiting review</span>
-            <% elsif latest&.status_rejected? %>
-              <div class="flex flex-col items-end gap-1">
-                <span class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-800">Rejected</span>
-                <% if latest.parent_note.present? %>
-                  <p class="text-xs text-red-600 text-right max-w-[140px]"><%= latest.parent_note %></p>
-                <% end %>
-                <%= link_to 'Try Again', public_new_attempt_path(params[:token], assignment.id), class: 'px-3 py-2 bg-indigo-600 text-white rounded text-sm' %>
-              </div>
-            <% elsif assignment.require_photo? %>
-              <%= link_to 'Mark Done', public_new_attempt_path(params[:token], assignment.id), class: 'px-3 py-2 bg-indigo-600 text-white rounded' %>
-            <% else %>
-              <%= button_to public_create_attempt_path(params[:token]), method: :post,
-                    params: { chore_assignment_id: assignment.id },
-                    class: 'px-3 py-2 bg-indigo-600 text-white rounded' do %>
-                Mark Done
-              <% end %>
-            <% end %>
+            <div class="text-xl font-extrabold text-yellow-600 leading-none"><%= @child.token_balance %></div>
+            <div class="text-xs text-gray-400">tokens</div>
           </div>
         </div>
+        <div class="flex-1 mx-4">
+          <div class="flex justify-between text-xs text-gray-500 mb-1">
+            <span><%= approved_count %>/<%= total %> done</span>
+            <% if pending_count > 0 %>
+              <span class="text-yellow-600"><%= pending_count %> being checked</span>
+            <% end %>
+          </div>
+          <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+            <div class="h-3 bg-green-400 rounded-full transition-all duration-500"
+                 style="width: <%= pct_approved %>%"></div>
+          </div>
+        </div>
+        <% if approved_count == total && total > 0 %>
+          <span class="text-2xl">🎉</span>
+        <% end %>
+      </div>
+
+      <%# Today's chores %>
+      <h2 class="text-lg font-bold mb-3 text-gray-800">Today's Chores</h2>
+
+      <% if @assignments.empty? %>
+        <div class="p-4 bg-gray-50 rounded-xl text-gray-600">No chores for today. Great job! 🎉</div>
+      <% else %>
+        <div class="space-y-4">
+          <% @assignments.each do |assignment| %>
+            <div class="p-4 bg-white rounded-xl shadow-sm flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-semibold text-gray-900"><%= assignment.chore&.name || 'Chore' %></div>
+                <div class="text-sm text-gray-500"><%= assignment.chore&.definition_of_done %></div>
+              </div>
+              <div class="flex-shrink-0">
+                <% latest = assignment.latest_attempt %>
+                <% if assignment.approved == true %>
+                  <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-sm">Done! ⭐</span>
+                <% elsif latest&.status_pending? %>
+                  <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium">Mom is checking... 👀</span>
+                <% elsif latest&.status_rejected? %>
+                  <div class="flex flex-col items-end gap-1">
+                    <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-semibold">Try again! 🔄</span>
+                    <% if latest.parent_note.present? %>
+                      <p class="text-xs text-red-500 text-right max-w-[140px]"><%= latest.parent_note %></p>
+                    <% end %>
+                    <%= link_to 'Try Again', public_new_attempt_path(params[:token], assignment.id),
+                          class: 'mt-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700' %>
+                  </div>
+                <% elsif assignment.require_photo? %>
+                  <%= link_to 'Mark Done', public_new_attempt_path(params[:token], assignment.id),
+                        class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700' %>
+                <% else %>
+                  <%= button_to public_create_attempt_path(params[:token]), method: :post,
+                        params: { chore_assignment_id: assignment.id },
+                        class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700' do %>
+                    Mark Done
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
       <% end %>
-    </div>
-  <% end %>
 
-  <%# Show Play button when all today's chores are completed and approved %>
+      <% todays_ready = @assignments.any? && @assignments.all? { |a| a.approved == true } %>
+      <% if todays_ready %>
+        <div class="mt-6">
+          <%= link_to 'Play games 🎮', public_play_path(params[:token]),
+                class: 'inline-block px-5 py-3 bg-green-500 text-white font-bold rounded-xl shadow hover:bg-green-600 transition' %>
+        </div>
+      <% end %>
+
+    </turbo-frame>
+  </div>
+
+  <%# todays_ready for the bottom nav (computed outside the turbo-frame) %>
   <% todays_ready = @assignments.any? && @assignments.all? { |a| a.approved == true } %>
-  <% if todays_ready %>
-    <div class="mt-6">
-      <%= link_to 'Play games', public_play_path(params[:token]), class: 'inline-block px-3 py-2 bg-indigo-600 text-white rounded shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500' %>
-    </div>
-  <% end %>
 
-  <hr class="my-8">
+  <%# Upcoming chores — collapsed by default %>
+  <details class="mt-8 group">
+    <summary class="cursor-pointer list-none flex items-center justify-between
+                    text-lg font-bold text-gray-700 hover:text-gray-900 select-none
+                    py-3 border-t border-gray-200">
+      <span>Upcoming chores <span class="text-sm font-normal text-gray-400">(next 90 days)</span></span>
+      <svg class="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </summary>
 
-  <h2 class="text-xl font-bold mb-3">Upcoming chores (next 90 days)</h2>
-
-  <% if @upcoming.blank? %>
-    <div class="p-4 bg-gray-50 rounded">No upcoming chores scheduled.</div>
-  <% else %>
-    <% upcoming_grouped = @upcoming.group_by(&:scheduled_on) %>
-    <div class="space-y-6">
-      <% upcoming_grouped.each do |date, items| %>
-        <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-2"><%= l(date, format: :long) %></h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <% items.each do |assignment| %>
-              <div class="p-4 bg-white rounded shadow-sm flex items-center justify-between">
-                <div>
-                  <div class="font-semibold"><%= assignment.chore&.name || 'Chore' %></div>
-                  <div class="text-sm text-gray-600"><%= assignment.chore&.definition_of_done %></div>
-                </div>
-                <div>
-                  <% latest = assignment.latest_attempt %>
-                  <% if assignment.approved == true %>
-                    <span class="px-3 py-1 rounded bg-green-100 text-green-800 text-sm">Approved ✓</span>
-                  <% elsif latest&.status_pending? %>
-                    <span class="px-3 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">Awaiting review</span>
-                  <% elsif latest&.status_rejected? %>
-                    <div class="flex flex-col items-end gap-1">
-                      <span class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-800">Rejected</span>
-                      <% if latest.parent_note.present? %>
-                        <p class="text-xs text-red-600 text-right max-w-[140px]"><%= latest.parent_note %></p>
+    <div class="mt-3">
+      <% if @upcoming.blank? %>
+        <div class="p-4 bg-gray-50 rounded-xl text-gray-500">No upcoming chores scheduled.</div>
+      <% else %>
+        <% upcoming_grouped = @upcoming.group_by(&:scheduled_on) %>
+        <div class="space-y-6">
+          <% upcoming_grouped.each do |date, items| %>
+            <div>
+              <h3 class="text-sm font-medium text-gray-700 mb-2"><%= l(date, format: :long) %></h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <% items.each do |assignment| %>
+                  <div class="p-4 bg-white rounded-xl shadow-sm flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="font-semibold text-gray-900"><%= assignment.chore&.name || 'Chore' %></div>
+                      <div class="text-sm text-gray-500"><%= assignment.chore&.definition_of_done %></div>
+                    </div>
+                    <div class="flex-shrink-0">
+                      <% latest = assignment.latest_attempt %>
+                      <% if assignment.approved == true %>
+                        <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">Done! ⭐</span>
+                      <% elsif latest&.status_pending? %>
+                        <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium">Mom is checking... 👀</span>
+                      <% elsif latest&.status_rejected? %>
+                        <div class="flex flex-col items-end gap-1">
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-semibold">Try again! 🔄</span>
+                          <% if latest.parent_note.present? %>
+                            <p class="text-xs text-red-500 text-right max-w-[140px]"><%= latest.parent_note %></p>
+                          <% end %>
+                        </div>
+                      <% else %>
+                        <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm">Upcoming</span>
                       <% end %>
                     </div>
-                  <% else %>
-                    <span class="px-3 py-1 rounded bg-gray-100 text-gray-800 text-sm">Upcoming</span>
-                  <% end %>
-                </div>
+                  </div>
+                <% end %>
               </div>
-            <% end %>
-          </div>
+            </div>
+          <% end %>
         </div>
       <% end %>
     </div>
-  <% end %>
+  </details>
 </div>
+
+<%= render 'bottom_nav', child: @child, token: params[:token], todays_ready: todays_ready %>

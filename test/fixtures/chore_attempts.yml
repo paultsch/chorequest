@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  chore_assignment: one
+  status: pending
+
+two:
+  chore_assignment: two
+  status: approved
+
+three:
+  chore_assignment: one
+  status: rejected

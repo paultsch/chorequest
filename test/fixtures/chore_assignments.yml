@@ -3,15 +3,15 @@
 one:
   child: one
   chore: one
-  day: MyString
+  scheduled_on: 2026-03-01
   completed: false
   approved: false
-  completion_photo: MyString
+  require_photo: false
 
 two:
   child: two
   chore: two
-  day: MyString
+  scheduled_on: 2026-03-01
   completed: false
   approved: false
-  completion_photo: MyString
+  require_photo: false

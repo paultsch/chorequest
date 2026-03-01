@@ -1,4 +1,4 @@
-<div class="max-w-lg mx-auto py-8 space-y-6">
+<div class="max-w-lg mx-auto py-8 pb-24 space-y-6">
   <% if alert %>
     <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg"><%= alert %></div>
   <% end %>
@@ -15,7 +15,7 @@
     <%= form_with url: public_create_attempt_path(params[:token]), method: :post, multipart: true, class: 'space-y-5' do |f| %>
       <%= hidden_field_tag :chore_assignment_id, @chore_assignment.id %>
 
-      <div>
+      <div data-controller="photo-preview">
         <%= label_tag 'chore_attempt[photo]',
               @chore_assignment.require_photo? ? 'Photo proof (required)' : 'Photo proof (optional)',
               class: 'block text-sm font-medium text-gray-700' %>
@@ -23,16 +23,29 @@
               accept: 'image/*',
               capture: 'environment',
               class: 'mt-1 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100',
-              required: @chore_assignment.require_photo? %>
+              required: @chore_assignment.require_photo?,
+              data: { photo_preview_target: "input", action: "change->photo-preview#preview" } %>
+
+        <%# Photo preview — hidden until a file is chosen %>
+        <img data-photo-preview-target="preview"
+             class="hidden w-full max-h-64 object-contain rounded-xl border border-gray-200 shadow-sm mt-3"
+             src="" alt="Photo preview">
+        <p data-photo-preview-target="hint"
+           class="text-xs text-gray-400 mt-2 text-center">
+          📸 Your photo will appear here before you submit
+        </p>
+
         <% unless @chore_assignment.require_photo? %>
           <p class="text-xs text-gray-500 mt-1">A photo helps your parent verify the chore is done.</p>
         <% end %>
       </div>
 
       <div class="flex items-center gap-3 pt-2">
-        <%= f.submit 'Submit for Review', class: 'px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700' %>
+        <%= f.submit 'Submit for Review', class: 'px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 cursor-pointer' %>
         <%= link_to 'Cancel', public_child_path(params[:token]), class: 'text-sm text-gray-600 hover:underline' %>
       </div>
     <% end %>
   </div>
 </div>
+
+<%= render 'bottom_nav', child: @child, token: params[:token], todays_ready: false %>

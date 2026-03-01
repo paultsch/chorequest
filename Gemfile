@@ -82,4 +82,8 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  # Pin minitest to 5.x — minitest 6+ is incompatible with Rails 7.1's test runner
+  gem "minitest", "~> 5.25"
+  # Restores assigns() helper to integration tests
+  gem "rails-controller-testing"
 end

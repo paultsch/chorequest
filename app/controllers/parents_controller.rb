@@ -1,70 +1,54 @@
 class ParentsController < ApplicationController
+  before_action :authenticate_parent!
   before_action :set_parent, only: %i[ show edit update destroy ]
 
-  # GET /parents or /parents.json
-  def index
-    @parents = Parent.all
-  end
-
-  # GET /parents/1 or /parents/1.json
-  def show
-  end
-
-  # GET /parents/new
-  def new
-    @parent = Parent.new
-  end
-
-  # GET /parents/1/edit
+  # GET /parents/1/edit (Settings)
   def edit
   end
 
-  # POST /parents or /parents.json
-  def create
-    @parent = Parent.new(parent_params)
-
-    respond_to do |format|
-      if @parent.save
-        format.html { redirect_to @parent, notice: "Parent was successfully created." }
-        format.json { render :show, status: :created, location: @parent }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @parent.errors, status: :unprocessable_entity }
-      end
-    end
-  end
-
-  # PATCH/PUT /parents/1 or /parents/1.json
+  # PATCH/PUT /parents/1
   def update
-    respond_to do |format|
-      if @parent.update(parent_params)
-        format.html { redirect_to @parent, notice: "Parent was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @parent }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @parent.errors, status: :unprocessable_entity }
+    # If password change is requested, verify the current password first
+    if parent_params[:password].present?
+      unless @parent.valid_password?(params[:parent][:current_password])
+        @parent.errors.add(:base, "Current password is incorrect")
+        render :edit, status: :unprocessable_entity and return
       end
+    end
+
+    # Strip blank password fields so a profile-only update doesn't touch the password
+    safe_params = parent_params
+    if safe_params[:password].blank?
+      safe_params = safe_params.except(:password, :password_confirmation)
+    end
+
+    if @parent.update(safe_params)
+      # Keep the session alive if password or email changed
+      bypass_sign_in(@parent) if safe_params[:password].present?
+      redirect_to edit_parent_path(@parent), notice: "Settings updated successfully."
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
-  # DELETE /parents/1 or /parents/1.json
+  # DELETE /parents/1
   def destroy
+    sign_out(current_parent)
     @parent.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to parents_path, notice: "Parent was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
-    end
+    redirect_to root_path, notice: "Your account has been deleted."
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_parent
-      @parent = Parent.find(params[:id])
-    end
 
-    # Only allow a list of trusted parameters through.
-    def parent_params
-      params.require(:parent).permit(:name, :email, :password, :password_confirmation)
+  def set_parent
+    # Parents can only manage their own account
+    @parent = current_parent
+    unless @parent.id == params[:id].to_i
+      redirect_to edit_parent_path(current_parent), alert: "Not authorized." and return
     end
+  end
+
+  def parent_params
+    params.require(:parent).permit(:name, :email, :password, :password_confirmation)
+  end
 end
