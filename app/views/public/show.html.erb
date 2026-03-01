@@ -17,7 +17,7 @@
 
   <%# Chore status section — auto-refreshes every 15s so verdicts appear without a page reload %>
   <div data-controller="poll" data-poll-interval-value="15">
-    <turbo-frame id="chore_status" src="<%= public_child_path(params[:token]) %>">
+    <turbo-frame id="chore_status">
 
       <%# Token balance + progress bar %>
       <% total          = @assignments.size %>
