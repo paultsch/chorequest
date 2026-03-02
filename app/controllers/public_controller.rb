@@ -101,6 +101,8 @@ class PublicController < ApplicationController
         "/games/pong_with_menu.html?session_id=#{active.id}"
       elsif active.game&.name.to_s.downcase.include?('runner')
         "/games/runner.html?session_id=#{active.id}"
+      elsif active.game&.name.to_s.downcase.include?('berry')
+        "/games/berry-hunt/index.html?session_id=#{active.id}"
       else
         game_path(active.game) + "?session_id=#{active.id}"
       end
@@ -118,6 +120,8 @@ class PublicController < ApplicationController
       "/games/pong_with_menu.html?session_id=#{gs.id}"
     elsif game.name.to_s.downcase.include?('runner')
       "/games/runner.html?session_id=#{gs.id}"
+    elsif game.name.to_s.downcase.include?('berry')
+      "/games/berry-hunt/index.html?session_id=#{gs.id}"
     else
       game_path(game) + "?session_id=#{gs.id}"
     end

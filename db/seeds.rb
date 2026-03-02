@@ -30,6 +30,8 @@ chore_templates = [
 end
 
 game = Game.create!(name: 'Pong', description: 'Classic pong game', token_per_minute: 1)
+Game.create!(name: 'Berry Hunt', description: "Count berries with Pyrch! A fun counting game for little learners aged 4–6.", token_per_minute: 1)
+Game.create!(name: 'Jungle Runner', description: 'Jump over obstacles in the jungle and rack up points!', token_per_minute: 1)
 
 # A sample transaction to give kids some tokens
 TokenTransaction.create!(child: child1, amount: 20, description: 'Initial grant')

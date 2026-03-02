@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Pyrch's Berry Hunt</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #e8f5e9;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* ─── Screens ──────────────────────────────────────────────── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      overflow: hidden;
+    }
+    .screen.active { opacity: 1; pointer-events: all; }
+
+    /* ─── Token bar ────────────────────────────────────────────── */
+    #token-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 46px;
+      background: rgba(255,255,255,0.93);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 999;
+      font-size: 15px;
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    #token-display { color: #d97706; }
+    #score-display  { color: #10b981; }
+
+    /* ─── START SCREEN ─────────────────────────────────────────── */
+    #start-screen {
+      background: linear-gradient(175deg, #b3e5fc 0%, #c8e6c9 55%, #a5d6a7 100%);
+      justify-content: center;
+      gap: 20px;
+      padding: 24px;
+    }
+    .game-title {
+      font-size: 30px;
+      font-weight: 900;
+      color: #1b5e20;
+      text-align: center;
+      text-shadow: 0 2px 0 rgba(255,255,255,0.5);
+    }
+    .game-subtitle {
+      font-size: 17px;
+      color: #33691e;
+      text-align: center;
+    }
+    #start-btn {
+      background: linear-gradient(135deg, #66bb6a, #2e7d32);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 16px 40px;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #1b5e20, 0 6px 12px rgba(0,0,0,0.18);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #start-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #1b5e20; }
+
+    /* ─── GAME SCREEN ──────────────────────────────────────────── */
+    #game-screen {
+      background: linear-gradient(180deg, #e0f7fa 0%, #e8f5e9 50%, #c8e6c9 100%);
+      padding-top: 46px;
+      justify-content: flex-start;
+      gap: 0;
+    }
+
+    /* Pyrch */
+    .pyrch-wrap { display: flex; justify-content: center; padding: 8px 0 0; }
+    #pyrch-game {
+      width: 82px;
+      height: 90px;
+      animation: bob 2.5s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-5px); }
+    }
+    #pyrch-game.happy {
+      animation: celebrate 0.45s ease-in-out 3 !important;
+    }
+    @keyframes celebrate {
+      0%,100% { transform: scale(1) rotate(0deg); }
+      30%      { transform: scale(1.2) rotate(-10deg); }
+      70%      { transform: scale(1.2) rotate(10deg); }
+    }
+    #pyrch-game.shake {
+      animation: nope 0.35s ease-in-out 2 !important;
+    }
+    @keyframes nope {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-7px); }
+      75%      { transform: translateX(7px); }
+    }
+
+    /* Speech bubble */
+    #speech {
+      background: white;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #37474f;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: relative;
+      margin: 4px 16px;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    #speech::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 7px solid transparent;
+      border-bottom-color: white;
+    }
+
+    /* Berry stage */
+    #berry-stage {
+      width: calc(100% - 24px);
+      max-width: 380px;
+      height: 168px;
+      background: linear-gradient(180deg, #81c784 0%, #66bb6a 100%);
+      border-radius: 20px;
+      margin: 8px 12px 0;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12), inset 0 -3px 0 rgba(0,0,0,0.1);
+      flex-shrink: 0;
+    }
+    /* sky tint at top */
+    #berry-stage::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      background: rgba(179,229,252,0.35);
+      border-radius: 20px 20px 0 0;
+      pointer-events: none;
+    }
+
+    /* Berries */
+    .berry {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle at 36% 32%, #ef9a9a, #c62828);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 -2px 3px rgba(0,0,0,0.15);
+      transition: transform 0.1s;
+      overflow: visible;
+    }
+    .berry::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 6px;
+      background: #4caf50;
+      border-radius: 1px;
+    }
+    .berry::before {
+      content: '';
+      position: absolute;
+      top: -7px;
+      left: 55%;
+      width: 8px;
+      height: 5px;
+      background: #388e3c;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-30deg);
+    }
+    .berry.shake-anim { animation: berry-shake 0.4s ease; }
+    @keyframes berry-shake {
+      0%,100% { transform: rotate(0); }
+      25%      { transform: rotate(-18deg) scale(1.1); }
+      75%      { transform: rotate(18deg) scale(1.1); }
+    }
+
+    /* Question */
+    #question-text {
+      font-size: 19px;
+      font-weight: 800;
+      color: #1b5e20;
+      text-align: center;
+      padding: 6px 16px 2px;
+      flex-shrink: 0;
+    }
+
+    /* Answer buttons */
+    #answers {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 8px 16px 12px;
+      width: 100%;
+      max-width: 400px;
+      flex-shrink: 0;
+    }
+    .ans-btn {
+      height: 60px;
+      border: none;
+      border-radius: 14px;
+      font-size: 26px;
+      font-weight: 900;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.08s, box-shadow 0.08s;
+    }
+    .ans-btn:active { transform: translateY(2px) !important; }
+    .ans-btn[data-col="0"] { background: #ff7043; color: white; box-shadow: 0 4px 0 #bf360c; }
+    .ans-btn[data-col="1"] { background: #29b6f6; color: white; box-shadow: 0 4px 0 #0277bd; }
+    .ans-btn[data-col="2"] { background: #ab47bc; color: white; box-shadow: 0 4px 0 #6a1b9a; }
+    .ans-btn[data-col="3"] { background: #ffd740; color: #5d4037; box-shadow: 0 4px 0 #f9a825; }
+    .ans-btn.correct-flash {
+      background: #4caf50 !important;
+      color: white !important;
+      box-shadow: 0 0 0 4px #a5d6a7, 0 4px 0 #2e7d32 !important;
+      transform: scale(1.06) !important;
+    }
+    .ans-btn.wrong-flash {
+      background: #ef5350 !important;
+      color: white !important;
+      box-shadow: 0 4px 0 #b71c1c !important;
+    }
+
+    /* ─── LEVEL UP SCREEN ──────────────────────────────────────── */
+    #levelup-screen {
+      background: linear-gradient(160deg, #fff9c4, #ffe082, #ffcc02);
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+    }
+    .levelup-big { font-size: 46px; font-weight: 900; color: #e65100; text-align: center; }
+    .levelup-sub { font-size: 18px; color: #bf360c; text-align: center; font-weight: 700; line-height: 1.5; max-width: 280px; }
+    #next-level-btn {
+      background: linear-gradient(135deg, #ff8f00, #e65100);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 16px 40px;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #bf360c;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #next-level-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #bf360c; }
+
+    /* ─── OUT OF TOKENS SCREEN ─────────────────────────────────── */
+    #tokens-screen {
+      background: linear-gradient(160deg, #e8eaf6, #c5cae9);
+      justify-content: center;
+      gap: 16px;
+      padding: 24px;
+    }
+    .tokens-title { font-size: 24px; font-weight: 900; color: #283593; text-align: center; }
+    .tokens-msg   { font-size: 16px; color: #3949ab; text-align: center; line-height: 1.6; max-width: 280px; }
+    #chores-btn {
+      background: linear-gradient(135deg, #5c6bc0, #283593);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 16px 32px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #1a237e;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #chores-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #1a237e; }
+
+    /* ─── CONFETTI ─────────────────────────────────────────────── */
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden; }
+    .cp {
+      position: absolute;
+      border-radius: 2px;
+    }
+    @keyframes fall {
+      from { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+      to   { transform: translateY(110vh)  rotate(720deg); opacity: 0; }
+    }
+
+    /* Shared Pyrch size on non-game screens */
+    .pyrch-lg { width: 100px; height: 110px; }
+  </style>
+</head>
+<body>
+
+<!-- ─── Confetti layer ───────────────────────────────────────── -->
+<div id="confetti"></div>
+
+<!-- ─── Token bar ───────────────────────────────────────────── -->
+<div id="token-bar">
+  <span id="token-display">🪙 — tokens</span>
+  <span id="score-display">⭐ 0 pts</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- START SCREEN                                               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="start-screen" class="screen active">
+  <!-- Pyrch — happy / curious -->
+  <svg class="pyrch-lg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="animation:bob 2.5s ease-in-out infinite">
+    <ellipse cx="20" cy="65" rx="18" ry="12" fill="#26c6da" transform="rotate(-25 20 65)"/>
+    <ellipse cx="80" cy="65" rx="18" ry="12" fill="#26c6da" transform="rotate(25 80 65)"/>
+    <circle cx="50" cy="60" r="36" fill="#ffd600"/>
+    <ellipse cx="50" cy="70" rx="20" ry="16" fill="#fff9c4"/>
+    <circle cx="37" cy="50" r="12" fill="white"/>
+    <circle cx="63" cy="50" r="12" fill="white"/>
+    <circle cx="38" cy="51" r="7.5" fill="#00acc1"/>
+    <circle cx="64" cy="51" r="7.5" fill="#00acc1"/>
+    <circle cx="40" cy="49" r="3.5" fill="#0d1b2a"/>
+    <circle cx="66" cy="49" r="3.5" fill="#0d1b2a"/>
+    <circle cx="41" cy="47.5" r="1.8" fill="white"/>
+    <circle cx="67" cy="47.5" r="1.8" fill="white"/>
+    <path d="M 38 65 Q 50 76 62 65" stroke="#d84315" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="62" rx="5" ry="3.5" fill="#ff8f00"/>
+    <ellipse cx="50" cy="24" rx="5" ry="9" fill="#00acc1" transform="rotate(-5 50 24)"/>
+    <ellipse cx="43" cy="27" rx="3.5" ry="7" fill="#26c6da" transform="rotate(-18 43 27)"/>
+    <ellipse cx="57" cy="27" rx="3.5" ry="7" fill="#26c6da" transform="rotate(18 57 27)"/>
+    <rect x="36" y="93" width="10" height="5" rx="3" fill="#ff8f00"/>
+    <rect x="54" y="93" width="10" height="5" rx="3" fill="#ff8f00"/>
+  </svg>
+  <h1 class="game-title">Pyrch's Berry Hunt 🫐</h1>
+  <p class="game-subtitle">Count the berries and pick the right number!</p>
+  <button id="start-btn">Let's Play! →</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- GAME SCREEN                                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="game-screen" class="screen">
+
+  <div class="pyrch-wrap">
+    <!-- Pyrch — game state (JS animates this) -->
+    <svg id="pyrch-game" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="20" cy="66" rx="18" ry="12" fill="#26c6da" transform="rotate(-20 20 66)"/>
+      <ellipse cx="80" cy="66" rx="18" ry="12" fill="#26c6da" transform="rotate(20 80 66)"/>
+      <circle cx="50" cy="61" r="36" fill="#ffd600"/>
+      <ellipse cx="50" cy="71" rx="20" ry="16" fill="#fff9c4"/>
+      <circle cx="37" cy="51" r="12" fill="white"/>
+      <circle cx="63" cy="51" r="12" fill="white"/>
+      <circle cx="38" cy="52" r="7.5" fill="#00acc1"/>
+      <circle cx="64" cy="52" r="7.5" fill="#00acc1"/>
+      <circle cx="40" cy="50" r="3.5" fill="#0d1b2a"/>
+      <circle cx="66" cy="50" r="3.5" fill="#0d1b2a"/>
+      <circle cx="41" cy="48.5" r="1.8" fill="white"/>
+      <circle cx="67" cy="48.5" r="1.8" fill="white"/>
+      <ellipse cx="50" cy="63" rx="5" ry="3.5" fill="#ff8f00"/>
+      <path d="M 43 67 Q 50 73 57 67" stroke="#d84315" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="50" cy="26" rx="5" ry="9" fill="#00acc1" transform="rotate(-5 50 26)"/>
+      <ellipse cx="43" cy="29" rx="3.5" ry="7" fill="#26c6da" transform="rotate(-18 43 29)"/>
+      <ellipse cx="57" cy="29" rx="3.5" ry="7" fill="#26c6da" transform="rotate(18 57 29)"/>
+      <rect x="36" y="94" width="10" height="5" rx="3" fill="#ff8f00"/>
+      <rect x="54" y="94" width="10" height="5" rx="3" fill="#ff8f00"/>
+    </svg>
+  </div>
+
+  <div id="speech">Count the berries! 🫐</div>
+
+  <div id="berry-stage"></div>
+
+  <p id="question-text">How many berries?</p>
+  <div id="answers"></div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- LEVEL UP SCREEN                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="levelup-screen" class="screen">
+  <!-- Pyrch — celebrating -->
+  <svg class="pyrch-lg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg" style="animation:celebrate 0.45s ease-in-out 5">
+    <ellipse cx="16" cy="60" rx="18" ry="12" fill="#26c6da" transform="rotate(-45 16 60)"/>
+    <ellipse cx="84" cy="60" rx="18" ry="12" fill="#26c6da" transform="rotate(45 84 60)"/>
+    <circle cx="50" cy="60" r="36" fill="#ffd600"/>
+    <ellipse cx="50" cy="70" rx="20" ry="16" fill="#fff9c4"/>
+    <circle cx="37" cy="50" r="12" fill="white"/>
+    <circle cx="63" cy="50" r="12" fill="white"/>
+    <circle cx="38" cy="51" r="7.5" fill="#00acc1"/>
+    <circle cx="64" cy="51" r="7.5" fill="#00acc1"/>
+    <circle cx="40" cy="49" r="3.5" fill="#0d1b2a"/>
+    <circle cx="66" cy="49" r="3.5" fill="#0d1b2a"/>
+    <circle cx="41" cy="47.5" r="1.8" fill="white"/>
+    <circle cx="67" cy="47.5" r="1.8" fill="white"/>
+    <path d="M 36 65 Q 50 80 64 65" stroke="#d84315" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="62" rx="5" ry="3.5" fill="#ff8f00"/>
+    <ellipse cx="50" cy="24" rx="5" ry="9" fill="#00acc1" transform="rotate(-5 50 24)"/>
+    <ellipse cx="43" cy="27" rx="3.5" ry="7" fill="#26c6da" transform="rotate(-18 43 27)"/>
+    <ellipse cx="57" cy="27" rx="3.5" ry="7" fill="#26c6da" transform="rotate(18 57 27)"/>
+    <rect x="36" y="93" width="10" height="5" rx="3" fill="#ff8f00"/>
+    <rect x="54" y="93" width="10" height="5" rx="3" fill="#ff8f00"/>
+  </svg>
+  <p class="levelup-big">Level Up! 🌟</p>
+  <p class="levelup-sub" id="levelup-sub">You're an amazing counter!</p>
+  <button id="next-level-btn">Keep Going! →</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- OUT OF TOKENS SCREEN                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="tokens-screen" class="screen">
+  <!-- Pyrch — sad / droopy -->
+  <svg class="pyrch-lg" viewBox="0 0 100 110" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="20" cy="68" rx="18" ry="12" fill="#26c6da" transform="rotate(-8 20 68)"/>
+    <ellipse cx="80" cy="68" rx="18" ry="12" fill="#26c6da" transform="rotate(8 80 68)"/>
+    <circle cx="50" cy="62" r="36" fill="#ffd600"/>
+    <ellipse cx="50" cy="72" rx="20" ry="16" fill="#fff9c4"/>
+    <circle cx="37" cy="52" r="12" fill="white"/>
+    <circle cx="63" cy="52" r="12" fill="white"/>
+    <!-- heavy eyelids -->
+    <path d="M 25 47 Q 37 43 49 47" fill="#ffd600"/>
+    <path d="M 51 47 Q 63 43 75 47" fill="#ffd600"/>
+    <circle cx="38" cy="54" r="7.5" fill="#00acc1"/>
+    <circle cx="64" cy="54" r="7.5" fill="#00acc1"/>
+    <circle cx="40" cy="52" r="3.5" fill="#0d1b2a"/>
+    <circle cx="66" cy="52" r="3.5" fill="#0d1b2a"/>
+    <circle cx="41" cy="50.5" r="1.8" fill="white"/>
+    <circle cx="67" cy="50.5" r="1.8" fill="white"/>
+    <!-- sad mouth -->
+    <path d="M 40 71 Q 50 65 60 71" stroke="#d84315" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="65" rx="5" ry="3.5" fill="#ff8f00"/>
+    <!-- drooping crest feathers -->
+    <ellipse cx="50" cy="28" rx="5" ry="9" fill="#00acc1" transform="rotate(12 50 28)"/>
+    <ellipse cx="43" cy="29" rx="3.5" ry="7" fill="#26c6da" transform="rotate(6 43 29)"/>
+    <ellipse cx="57" cy="25" rx="3.5" ry="7" fill="#26c6da" transform="rotate(22 57 25)"/>
+    <!-- tear drop -->
+    <ellipse cx="31" cy="62" rx="3" ry="4" fill="#81d4fa"/>
+    <rect x="36" y="94" width="10" height="5" rx="3" fill="#ff8f00"/>
+    <rect x="54" y="94" width="10" height="5" rx="3" fill="#ff8f00"/>
+  </svg>
+  <p class="tokens-title">Oh no! No more tokens 🪙</p>
+  <p class="tokens-msg">Pyrch needs more berries!<br>Go do some chores to earn tokens and come back.</p>
+  <button id="chores-btn">Go Earn Tokens! →</button>
+</div>
+
+<script>
+'use strict';
+
+// ─── Constants ────────────────────────────────────────────────
+const ROUNDS_PER_LEVEL = 5;
+const HEARTBEAT_MS     = 60_000;
+const CONFETTI_COLORS  = ['#ff7043','#29b6f6','#ab47bc','#ffd740','#4caf50','#ef5350','#26c6da','#ff8f00'];
+
+const SPEECHES = {
+  count:   ['Count the berries! 🫐', 'How many do you see?', "Let's count together!", 'How many berries? 🍓', 'Count carefully! 🔢'],
+  correct: ['You got it! 🎉', 'Amazing counting!', 'Yes!! ⭐', 'Woohoo! 🎊', 'Brilliant! 🌟', 'Perfect! 🎯'],
+  wrong:   ['Ooh, try again!', 'Count them again...', 'So close! Try once more', 'Almost! Count carefully 🫐'],
+  levelup: ["You're a counting star! ⭐", "Wow, you're amazing! 🌟", 'Look how far you\'ve come! 🎉'],
+};
+
+// Levels: [minBerries, maxBerries]
+const LEVELS = [
+  [1, 5],   // Level 1 — easiest
+  [1, 7],   // Level 2
+  [1, 10],  // Level 3 — stays here once reached
+];
+
+// ─── State ────────────────────────────────────────────────────
+const S = {
+  level:          0,
+  score:          0,
+  roundsThisLevel: 0,
+  sessionId:      null,
+  tokens:         null,
+  heartbeatTimer: null,
+  locked:         false,
+  correct:        0,
+  answers:        [],
+};
+
+// ─── DOM ──────────────────────────────────────────────────────
+const $id = id => document.getElementById(id);
+const SCREENS = {
+  start:   $id('start-screen'),
+  game:    $id('game-screen'),
+  levelup: $id('levelup-screen'),
+  tokens:  $id('tokens-screen'),
+};
+
+function showScreen(name) {
+  Object.values(SCREENS).forEach(s => s.classList.remove('active'));
+  SCREENS[name].classList.add('active');
+}
+
+// ─── Utilities ────────────────────────────────────────────────
+const pick  = arr => arr[Math.floor(Math.random() * arr.length)];
+const rand  = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+function setSpeech(text) { $id('speech').textContent = text; }
+
+function updateBar() {
+  $id('token-display').textContent = S.tokens !== null ? `🪙 ${S.tokens}` : '🪙 —';
+  $id('score-display').textContent  = `⭐ ${S.score} pts`;
+}
+
+// ─── Heartbeat ────────────────────────────────────────────────
+function startHeartbeat() {
+  if (!S.sessionId) return;
+  clearInterval(S.heartbeatTimer);
+  S.heartbeatTimer = setInterval(doHeartbeat, HEARTBEAT_MS);
+}
+
+async function doHeartbeat() {
+  if (!S.sessionId) return;
+  try {
+    const r = await fetch(`/game_sessions/${S.sessionId}/heartbeat`, { method: 'POST' });
+    if (!r.ok) return;
+    const d = await r.json();
+    S.tokens = d.remaining_tokens;
+    updateBar();
+    if (d.ended) {
+      clearInterval(S.heartbeatTimer);
+      showOutOfTokens();
+    }
+  } catch (_) {
+    // network blip — don't interrupt the child's game
+  }
+}
+
+async function stopSession() {
+  if (!S.sessionId) return;
+  clearInterval(S.heartbeatTimer);
+  try { await fetch(`/game_sessions/${S.sessionId}/stop`, { method: 'POST' }); } catch (_) {}
+}
+
+// ─── Berry rendering ──────────────────────────────────────────
+function placeBerries(count) {
+  const stage = $id('berry-stage');
+  stage.innerHTML = '';
+
+  const W    = stage.offsetWidth  || 340;
+  const H    = stage.offsetHeight || 168;
+  const size = count <= 5 ? 34 : count <= 7 ? 30 : 26;
+  const gap  = size + 10;
+  const marg = 16;
+
+  const positions = [];
+  let attempts = 0;
+
+  while (positions.length < count && attempts < 1200) {
+    attempts++;
+    const x = marg + Math.random() * (W - marg * 2 - size);
+    const y = marg + Math.random() * (H - marg * 2 - size - 16);
+    if (!positions.some(p => Math.hypot(p.x - x, p.y - y) < gap)) {
+      positions.push({ x, y });
+    }
+  }
+
+  positions.forEach(({ x, y }) => {
+    const el = document.createElement('div');
+    el.className = 'berry';
+    el.style.cssText = `left:${Math.round(x)}px; top:${Math.round(y)}px; width:${size}px; height:${size}px;`;
+    stage.appendChild(el);
+  });
+}
+
+// ─── Answer generation ────────────────────────────────────────
+function generateAnswers(correct, levelIdx) {
+  const [, maxB] = LEVELS[levelIdx];
+  const pool = new Set([correct]);
+
+  let tries = 0;
+  while (pool.size < 4 && tries < 80) {
+    tries++;
+    const offset = rand(1, 3) * (Math.random() < 0.5 ? 1 : -1);
+    const c = clamp(correct + offset, 1, Math.max(maxB + 1, 4));
+    pool.add(c);
+  }
+  // safety fill
+  for (let n = 1; pool.size < 4; n++) { if (!pool.has(n)) pool.add(n); }
+
+  return [...pool].sort(() => Math.random() - 0.5);
+}
+
+// ─── New round ────────────────────────────────────────────────
+function newRound() {
+  S.locked = false;
+
+  const [minB, maxB] = LEVELS[S.level];
+  S.correct = rand(minB, maxB);
+  S.answers = generateAnswers(S.correct, S.level);
+
+  placeBerries(S.correct);
+
+  $id('question-text').textContent = 'How many berries?';
+  setSpeech(pick(SPEECHES.count));
+
+  const answersEl = $id('answers');
+  answersEl.innerHTML = '';
+  S.answers.forEach((num, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.setAttribute('data-col', i);
+    btn.textContent = num;
+    btn.addEventListener('click', () => onAnswer(btn, num));
+    btn.addEventListener('touchend', e => { e.preventDefault(); onAnswer(btn, num); }, { passive: false });
+    answersEl.appendChild(btn);
+  });
+
+  // reset pyrch animation
+  const p = $id('pyrch-game');
+  p.classList.remove('happy', 'shake');
+  void p.offsetWidth; // force reflow to restart base animation
+}
+
+// ─── Answer handler ───────────────────────────────────────────
+function onAnswer(btn, chosen) {
+  if (S.locked) return;
+  S.locked = true;
+
+  const pyrch = $id('pyrch-game');
+  pyrch.classList.remove('happy', 'shake');
+  void pyrch.offsetWidth;
+
+  if (chosen === S.correct) {
+    // ✅ Correct
+    btn.classList.add('correct-flash');
+    setSpeech(pick(SPEECHES.correct));
+    pyrch.classList.add('happy');
+    S.score += 10 + S.level * 5;
+    updateBar();
+    spawnConfetti();
+    S.roundsThisLevel++;
+
+    setTimeout(() => {
+      btn.classList.remove('correct-flash');
+      if (S.roundsThisLevel >= ROUNDS_PER_LEVEL && S.level < LEVELS.length - 1) {
+        showLevelUp();
+      } else {
+        newRound();
+      }
+    }, 1300);
+
+  } else {
+    // ❌ Wrong — be kind, just nudge
+    btn.classList.add('wrong-flash');
+    setSpeech(pick(SPEECHES.wrong));
+    pyrch.classList.add('shake');
+
+    // wiggle all berries
+    document.querySelectorAll('.berry').forEach(b => {
+      b.classList.remove('shake-anim');
+      void b.offsetWidth;
+      b.classList.add('shake-anim');
+    });
+
+    setTimeout(() => {
+      btn.classList.remove('wrong-flash');
+      S.locked = false;
+    }, 950);
+  }
+}
+
+// ─── Level up ─────────────────────────────────────────────────
+function showLevelUp() {
+  const nextLevel = S.level + 1;
+  const [, maxB]  = LEVELS[nextLevel] || LEVELS[S.level];
+  $id('levelup-sub').textContent =
+    `${pick(SPEECHES.levelup)} Now counting up to ${maxB}!`;
+  spawnConfetti();
+  showScreen('levelup');
+}
+
+// ─── Out of tokens ────────────────────────────────────────────
+function showOutOfTokens() {
+  clearInterval(S.heartbeatTimer);
+  showScreen('tokens');
+}
+
+// ─── Navigate back to chores ──────────────────────────────────
+function goToChores() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = '/';
+  }
+}
+
+// ─── Confetti ─────────────────────────────────────────────────
+function spawnConfetti() {
+  const container = $id('confetti');
+  for (let i = 0; i < 30; i++) {
+    const el       = document.createElement('div');
+    el.className   = 'cp';
+    const dur      = (0.8 + Math.random() * 0.9).toFixed(2);
+    const delay    = (Math.random() * 0.35).toFixed(2);
+    const isCircle = Math.random() > 0.5;
+    el.style.cssText = [
+      `left:${rand(5, 95)}%`,
+      `width:${rand(7, 13)}px`,
+      `height:${rand(7, 13)}px`,
+      `background:${pick(CONFETTI_COLORS)}`,
+      `animation: fall ${dur}s ${delay}s linear forwards`,
+      `border-radius: ${isCircle ? '50%' : '2px'}`,
+    ].join(';');
+    container.appendChild(el);
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+  }
+}
+
+// ─── Event listeners ──────────────────────────────────────────
+$id('start-btn').addEventListener('click', () => {
+  S.score          = 0;
+  S.level          = 0;
+  S.roundsThisLevel = 0;
+  updateBar();
+  showScreen('game');
+  startHeartbeat();
+  newRound();
+});
+
+$id('next-level-btn').addEventListener('click', () => {
+  S.level           = Math.min(S.level + 1, LEVELS.length - 1);
+  S.roundsThisLevel = 0;
+  showScreen('game');
+  newRound();
+});
+
+$id('chores-btn').addEventListener('click', goToChores);
+
+// Pause heartbeat when tab is hidden, resume when visible
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    clearInterval(S.heartbeatTimer);
+  } else if (SCREENS.game.classList.contains('active')) {
+    startHeartbeat();
+  }
+});
+
+// Stop session gracefully on page leave
+window.addEventListener('beforeunload', stopSession);
+
+// ─── Init ─────────────────────────────────────────────────────
+(function init() {
+  const params  = new URLSearchParams(window.location.search);
+  S.sessionId   = params.get('session_id') || null;
+
+  // Fetch initial token balance
+  if (S.sessionId) {
+    fetch(`/game_sessions/${S.sessionId}/heartbeat`, { method: 'POST' })
+      .then(r => r.json())
+      .then(d => {
+        S.tokens = d.remaining_tokens;
+        updateBar();
+        if (d.ended) showOutOfTokens();
+      })
+      .catch(() => {});
+  }
+
+  updateBar();
+})();
+</script>
+</body>
+</html>

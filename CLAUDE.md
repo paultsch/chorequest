@@ -16,11 +16,16 @@ Rails 7.1 app that lets parents assign chores to children, who earn tokens redee
 - Seeds use `find_or_create_by!` — safe to re-run without wiping data
 
 ## Ideas Backlog
+- [ ] Chore analytics dashboard — show parents (and eventually surface to AI) which chores have been assigned recently, completion rates per chore, per-child engagement trends, and overdue/skipped patterns; use this data to suggest what needs to be assigned next or flag chores that are consistently skipped
+- [ ] Sign in / sign up pages: add styled error notifications — Devise validation errors (wrong password, email taken, etc.) are currently unstyled or invisible; display them as a red alert banner above the form so users know what went wrong
 - [ ] Stripe payments — $10/month subscription, likely with a free plan tier
 - [ ] Fix the navigation
 - [ ] Make app more mobile friendly
 - [ ] Add mobile navigation bar to the bottom of the kids app
 - [ ] Make app a Progressive Web App (PWA) with push notifications (parent notified when child submits photo, child notified when tokens awarded)
+- [ ] PWA iOS install banner: iOS Safari never shows an automatic "Add to Home Screen" prompt — add a custom in-app banner that detects iOS Safari + not already in standalone mode (`window.matchMedia('(display-mode: standalone)').matches`) and shows a one-time instructional nudge: "Tap Share → Add to Home Screen for the best experience"; dismiss to localStorage so it only appears once
+- [ ] PWA iOS: must be opened in Safari to install — Chrome/Firefox on iOS are just Safari under the hood and cannot install PWAs; add a small "open in Safari" note if the user is on iOS but not in Safari (detect via user agent)
+- [ ] PWA Android/Chrome: hook the `beforeinstallprompt` event to show a native "Install App" button — Chrome fires this automatically when PWA criteria are met; intercept it and surface a button in the nav or a banner so users don't miss it
 - [ ] Assignment scheduler — drag chores onto a calendar to assign them to a child (replace the current form-based flow)
 - [ ] Dashboard: completed chores feed showing each completion with its photo proof
 - [ ] Real-time chore verdict updates — after a child submits a photo, the public view should auto-update when AI (or parent) approves/rejects without requiring a page reload (Turbo Streams or polling)
@@ -54,6 +59,11 @@ Rails 7.1 app that lets parents assign chores to children, who earn tokens redee
 - [ ] Scheduler: recurring assignment UI — backend already supports date-range bulk creation, but the drag-and-drop UI only supports dropping to one day at a time
 - [ ] Mobile scheduling: figure out the UX for toggling photo-required on chore assignments from a mobile device — the current desktop sidebar + drag-and-drop pattern doesn't translate well to touch; options include a bottom sheet, a long-press context menu on a chip, or a dedicated mobile scheduling flow
 - [ ] BUG: Parent hamburger menu is completely broken on mobile — the `data-nav-target="menu"` dropdown block is missing from the parent signed-in section in `application.html.erb`; logged-in parents on mobile have no way to navigate between pages
+- [ ] BUG: Scheduler — newly added chore assignments do not appear on the child's public page; investigate whether the assignment's scheduled_on date matches today's date as the controller queries it, or whether the child's turbo-frame poll interval is too slow to pick it up promptly
+- [ ] Scheduler: when a parent adds or removes a chore assignment for today, the child's public page should reflect the change without a manual reload — the 15-second turbo-frame poll will eventually catch it, but consider triggering a reload on `visibilitychange` (tab refocus) so the child sees fresh data the moment they switch back to the tab
+- [ ] Child chore submission: add optional "note to reviewer" text field on new_attempt form — pass the note text to AnalyzeChorePhotoJob so the AI prompt includes it when deciding to approve/reject
+- [ ] Child chore submission: show "AI is checking... 🤖" status immediately after submission (while status is pending and AI job is running), then switch to "Your grownup is checking... 👀" only if AI returns inconclusive/needs-human-review — avoid "mom/parent" language to stay relationship-neutral
+- [ ] Child chore submission: after AI finishes analyzing, auto-update the chore status on the child's page without requiring a refresh — the 15-second turbo-frame poll handles parent approvals but AI results come back faster; consider a shorter poll interval (3–5s) while a pending attempt exists, falling back to 15s when none do
 - [ ] BUG: Child "Play" button in bottom nav doesn't sync with Turbo Frame polling — `todays_ready` is computed outside the turbo-frame so the bottom nav Play button stays locked even after the 15-second poll approves chores; child sees "Play!" in main content but a grayed-out button in the nav bar
 - [ ] BUG: Child bottom nav token balance is a non-interactive fake nav item — it looks tappable but does nothing; either link it to a token history screen or remove it from the nav bar
 - [ ] Nav: replace parent mobile hamburger with a 4-tab bottom navigation bar — Today (Dashboard, with pending badge), Kids (Children), Schedule (Assignments), More (sheet with Chores, Tokens, Settings, Sign Out); pending approval badge must be visible in the bottom bar at all times

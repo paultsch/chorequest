@@ -33,10 +33,15 @@
           <div>Example cost: <span class="font-semibold"><%= (game.token_per_minute.to_i * 5) %> 🪙</span> (5 min)</div>
         </div>
         <div class="flex items-center gap-2">
-          <% if game.name.to_s.downcase.include?('pong') %>
-            <%= link_to 'Play', '/games/pong_with_menu.html', target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
-          <% elsif game.name.to_s.downcase.include?('runner') %>
-            <%= link_to 'Play', '/games/runner.html', target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
+          <% game_url = if game.name.to_s.downcase.include?('pong')
+               '/games/pong_with_menu.html'
+             elsif game.name.to_s.downcase.include?('runner')
+               '/games/runner.html'
+             elsif game.name.to_s.downcase.include?('berry')
+               '/games/berry-hunt/index.html'
+             end %>
+          <% if game_url %>
+            <%= link_to 'Play', game_url, target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
           <% else %>
             <%= link_to 'Play', game_path(game), target: :_blank, rel: 'noopener', class: 'px-3 py-2 rounded bg-green-500 text-white hover:bg-green-600 font-semibold' %>
           <% end %>
