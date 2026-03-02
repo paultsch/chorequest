@@ -143,7 +143,7 @@
         <%= link_to 'Back to Children', children_path, class: 'btn' %>
         <%= button_to 'Delete Child', @child, method: :delete, data: { confirm: 'Delete this child?' }, class: 'btn btn-danger' %>
         <%# Play games button: enabled only when all today's chores are completed %>
-        <% todays_incomplete = @child.chore_assignments.where(scheduled_on: Date.current).where(completed: [false, nil]).exists? %>
+        <% todays_incomplete = @child.chore_assignments.where(scheduled_on: Date.current).where.not(approved: true).exists? %>
         <% btn_disabled = todays_incomplete %>
         <%= button_to play_child_path(@child), method: :post, class: 'btn btn-primary ml-2', disabled: btn_disabled do %>
           Play games

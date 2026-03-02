@@ -64,6 +64,20 @@
               <%= link_to edit_parent_path(current_parent), class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Settings<% end %>
               <%= link_to "Sign Out", destroy_parent_session_path, data: { turbo_method: :delete }, class: "px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold transition-all duration-200 shadow-sm" %>
             </div>
+            <div data-nav-target="menu" class="hidden md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
+              <div class="px-6 py-4 space-y-2">
+                <%= link_to admin_root_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>
+                  Dashboard<% if @pending_approvals_count&.> 0 %> (<%= @pending_approvals_count %>)<% end %>
+                <% end %>
+                <%= link_to children_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Children<% end %>
+                <%= link_to chores_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Chores<% end %>
+                <%= link_to chore_assignments_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Assignments<% end %>
+                <%= link_to token_transactions_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Tokens<% end %>
+                <%= link_to games_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Games<% end %>
+                <%= link_to edit_parent_path(current_parent), class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Settings<% end %>
+                <div class="pt-2"><%= link_to destroy_parent_session_path, data: { turbo_method: :delete }, class: 'block px-3 py-2 rounded bg-blue-600 text-white font-semibold' do %>Sign Out<% end %></div>
+              </div>
+            </div>
           <% elsif session[:child_id] %>
             <% child = Child.find(session[:child_id]) %>
             <div class="hidden md:flex md:items-center md:gap-4">

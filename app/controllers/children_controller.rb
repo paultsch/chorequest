@@ -29,7 +29,7 @@ class ChildrenController < ApplicationController
   def play
     # Only allow play if all today's chores are completed
     today = Date.current
-    incomplete = @child.chore_assignments.where(scheduled_on: today).where(completed: [false, nil]).exists?
+    incomplete = @child.chore_assignments.where(scheduled_on: today).where.not(approved: true).exists?
     unless incomplete
       # Check token balance (informational for now)
       balance = @child.token_balance
