@@ -9,6 +9,12 @@ Rails 7.1 app that lets parents assign chores to children, who earn tokens redee
 - Devise (Parent auth + AdminUser auth)
 - Deployed on Render.com via GitHub
 
+## Pyrch Planning
+ChoreQuest is a prototype. The production app being planned is **Pyrch**. The master plan lives at `.claude/pyrch-plan.md`.
+- When any Pyrch architectural decision is made during a session, update `.claude/pyrch-plan.md` immediately
+- When a Pyrch phase item is completed, check it off in the plan
+- When a new lesson is learned that applies to Pyrch, add it to the Lessons Learned section
+
 ## Key Architecture Notes
 - Games are static HTML files in `public/games/` (not Rails views)
 - `config.public_file_server.enabled = true` is required on Render.com (no NGINX)
@@ -35,6 +41,13 @@ Rails 7.1 app that lets parents assign chores to children, who earn tokens redee
 - [ ] Child page: celebration animation (confetti + "+10 tokens!") when a chore is approved
 - [ ] Child page: collapse/hide the 90-day upcoming chores section by default — focus child on today only
 - [ ] BUG (security): Chore assignments index view has unscoped `ChoreAssignment.includes(...)` query at line 100 — leaks all parents' assignment data to any logged-in parent; move query to controller scoped to `current_parent`
+- [ ] [CRITICAL BUG - Security]: `ChildrenController` is missing `authenticate_parent!` — unauthenticated users can GET /children, GET /children/new, and POST /children with no auth enforcement; add `before_action :authenticate_parent!` at the class level
+- [ ] [CRITICAL BUG - Security]: `TokenTransactionsController` has no authentication guard — any unauthenticated HTTP client can POST /token_transactions with an arbitrary `child_id` and `amount` to grant or drain tokens for any child in the system; add `before_action :authenticate_parent!` and validate `child_id` belongs to `current_parent`
+- [ ] [CRITICAL BUG - Security]: `GameSessionsController` has no authentication, `set_game_session` uses unscoped `GameSession.find`, and `create` accepts user-controlled `child_id` without ownership check — an attacker can manipulate any child's game session or token balance; add auth and scope all lookups to `current_parent`
+- [ ] [CRITICAL BUG - Security]: `ChoreAssignmentsController` is missing `authenticate_parent!` and the `create` action accepts `child_id` from params without validating it belongs to `current_parent` — a parent can assign chores to another parent's child; add `before_action :authenticate_parent!` and validate child ownership in `create`
+- [ ] [HIGH BUG - Security]: `GameSessionsController#create` accepts user-controlled `duration_minutes` from params with no minimum value check — submitting `duration_minutes: 0` creates a free session, negative values grant tokens; enforce a server-side minimum of 1
+- [ ] [HIGH BUG]: Layout `application.html.erb` calls `Child.find(session[:child_id])` which raises `ActiveRecord::RecordNotFound` (500 error) if the child record was deleted after the session was created; replace with `find_by` and add a nil guard to clear the stale session gracefully
+- [ ] [MEDIUM BUG - Security]: `GameScoresController#create` accepts unauthenticated score submissions with arbitrary `child_id` and `game_id` params (CSRF is intentionally skipped), allowing score poisoning for any child; scope score creation to a verified session or child token
 - [ ] Settings page (`parents/edit`) is a bare unstyled scaffold — needs profile card, name/email fields, password change section, and account deletion danger zone
 - [ ] Children index: hide PIN codes behind a "Show" toggle instead of displaying plaintext — any bystander can read every child's PIN
 - [ ] Dashboard approval queue: replace wide 7-column table with mobile-friendly cards on small screens — large photo, thumb-friendly Approve/Reject buttons
@@ -79,3 +92,5 @@ Rails 7.1 app that lets parents assign chores to children, who earn tokens redee
 - [ ] [Marketing] Record and post 3 TikTok/Instagram Reels showing the end-to-end ChoreQuest flow (child takes photo → AI approves → tokens awarded → game unlocked) targeting #parentinghacks #choresforkids #screentime — post 3x/week for 8 weeks
 - [ ] [Marketing] Implement a referral program: unique referral link per parent account, "Give 1 month / Get 1 month" reward structure, and a one-tap post-approval share prompt ("Share this moment with another parent") that pre-fills a message with the referral link
 - [ ] [Marketing] Add "Why no app store?" section to the landing page — turn the PWA-only approach into a trust signal: "We're parents too. App stores take 30% of every subscription. By skipping them, we keep the price low and pass the savings to your family. Add to your home screen in 2 taps — it works just like a native app."
+- [ ] Co-parent / household accounts — allow a second adult to be invited to a parent account so both can assign chores, approve photo submissions, and view the dashboard without sharing login credentials; invited co-parent gets full parent-level access scoped to that household's children only
+- [ ] Netflix-style profile picker for shared devices — new route at `/` (or `/profiles`) shows all household members as large circular avatars on a dark full-screen background; child taps their avatar → large PIN keypad modal (not native keyboard — too small for kids, render 10 big number buttons + backspace) → correct PIN redirects to their existing `/public/:token` URL (no new session system needed); parent taps their avatar → standard Devise login; localStorage stores `{ profile_type: 'child', token: '...', name: 'Emma' }` so next visit shows "Continue as Emma" with one big tap target + small "Switch" link; authenticated parent can tap any child avatar to preview their view without entering the child's PIN; "Switch Profile" replaces the dead non-interactive token balance slot in the child bottom nav; if a parent regenerates a child's token, catch stale localStorage with a graceful "Your link changed — ask a parent" message rather than a broken screen; particularly useful for shared tablets/iPads

@@ -1,10 +1,11 @@
 class GameSessionsController < ApplicationController
+  before_action :authenticate_parent!, only: %i[ index show new edit create update destroy ]
   before_action :set_game_session, only: %i[ show edit update destroy heartbeat stop ]
   skip_before_action :verify_authenticity_token, only: %i[ heartbeat stop ]
 
   # GET /game_sessions or /game_sessions.json
   def index
-    @game_sessions = GameSession.all
+    @game_sessions = GameSession.where(child: current_parent.children).order(created_at: :desc)
   end
 
   # GET /game_sessions/1 or /game_sessions/1.json
@@ -22,13 +23,22 @@ class GameSessionsController < ApplicationController
 
   # POST /game_sessions or /game_sessions.json
   def create
+    child = current_parent.children.find_by(id: params.dig(:game_session, :child_id))
+    unless child
+      redirect_back fallback_location: game_sessions_path, alert: 'Invalid child.' and return
+    end
+
     @game_session = GameSession.new(game_session_params)
+
+    # Enforce minimum duration of 1 minute
+    if (@game_session.duration_minutes || 0) < 1
+      @game_session.duration_minutes = 1
+    end
 
     # Deduct tokens for the requested duration
     game = Game.find_by(id: @game_session.game_id)
-    child = Child.find_by(id: @game_session.child_id)
     if game && child
-      cost = (game.token_per_minute || 0) * (@game_session.duration_minutes || 0)
+      cost = (game.token_per_minute || 0) * @game_session.duration_minutes
       if child.token_balance < cost
         @game_session.errors.add(:base, 'Not enough tokens')
       else
@@ -122,9 +132,23 @@ class GameSessionsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
     def set_game_session
       @game_session = GameSession.find(params[:id])
+
+      # For heartbeat/stop (called from static game HTML by child's browser),
+      # verify the caller is either the child playing or the owning parent.
+      if action_name.in?(%w[heartbeat stop])
+        authorized = (session[:child_id].present? && @game_session.child_id.to_s == session[:child_id].to_s) ||
+                     (parent_signed_in? && current_parent.children.exists?(id: @game_session.child_id))
+        unless authorized
+          render json: { error: 'unauthorized' }, status: :unauthorized and return
+        end
+      else
+        # Parent-facing actions: ensure session belongs to this parent's child
+        unless current_parent.children.exists?(id: @game_session.child_id)
+          raise ActiveRecord::RecordNotFound
+        end
+      end
     end
 
     # Only allow a list of trusted parameters through.

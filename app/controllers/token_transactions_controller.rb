@@ -1,9 +1,9 @@
 class TokenTransactionsController < ApplicationController
+  before_action :authenticate_parent!
   before_action :set_token_transaction, only: %i[ show edit update destroy ]
 
   # GET /token_transactions or /token_transactions.json
   def index
-    return redirect_to root_path, alert: 'Not authorized' unless current_parent
 
     per_page = 20
     page = params[:page].to_i > 0 ? params[:page].to_i : 1
@@ -53,6 +53,11 @@ class TokenTransactionsController < ApplicationController
 
   # POST /token_transactions or /token_transactions.json
   def create
+    child = current_parent.children.find_by(id: token_transaction_params[:child_id])
+    unless child
+      redirect_back fallback_location: token_transactions_path, alert: 'Invalid child.' and return
+    end
+
     @token_transaction = TokenTransaction.new(token_transaction_params)
 
     respond_to do |format|

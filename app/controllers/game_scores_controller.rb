@@ -3,16 +3,21 @@ class GameScoresController < ApplicationController
 
   # POST /game_scores
   def create
-    # Accept either session_id or child_id+game_id
-    if params[:session_id].present?
-      gs = GameSession.find_by(id: params[:session_id])
-      return render json: { error: 'session not found' }, status: :not_found unless gs
-      child = gs.child
-      game = gs.game
-    else
-      child = Child.find_by(id: params[:child_id])
-      game = Game.find_by(id: params[:game_id])
+    # Scores must be tied to a verified game session — no anonymous child_id/game_id submissions.
+    unless params[:session_id].present?
+      return render json: { error: 'session_id required' }, status: :unprocessable_entity
     end
+
+    gs = GameSession.find_by(id: params[:session_id])
+    return render json: { error: 'session not found' }, status: :not_found unless gs
+
+    # Verify the caller owns this session (child playing or owning parent).
+    authorized = (session[:child_id].present? && gs.child_id.to_s == session[:child_id].to_s) ||
+                 (parent_signed_in? && current_parent.children.exists?(id: gs.child_id))
+    return render json: { error: 'unauthorized' }, status: :unauthorized unless authorized
+
+    child = gs.child
+    game  = gs.game
 
     return render json: { error: 'missing child or game' }, status: :unprocessable_entity unless child && game
 

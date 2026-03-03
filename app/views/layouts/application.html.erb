@@ -78,8 +78,7 @@
                 <div class="pt-2"><%= link_to destroy_parent_session_path, data: { turbo_method: :delete }, class: 'block px-3 py-2 rounded bg-blue-600 text-white font-semibold' do %>Sign Out<% end %></div>
               </div>
             </div>
-          <% elsif session[:child_id] %>
-            <% child = Child.find(session[:child_id]) %>
+          <% elsif session[:child_id] && (child = Child.find_by(id: session[:child_id])) %>
             <div class="hidden md:flex md:items-center md:gap-4">
               <%= link_to child_path(child), class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-600 font-semibold text-lg transition" do %>Home<% end %>
               <%= link_to games_path, class: "px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-600 font-semibold text-lg transition" do %>Games<% end %>
@@ -96,6 +95,7 @@
               </div>
             </div>
           <% else %>
+            <% session.delete(:child_id) if session[:child_id] %>
             <div class="hidden md:flex md:items-center md:gap-4">
               <a href="#features" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Features</a>
               <a href="#pricing" class="px-4 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold text-lg transition">Pricing</a>

@@ -1,4 +1,5 @@
 class ChildrenController < ApplicationController
+  before_action :authenticate_parent!
   before_action :set_child, only: %i[ show edit update destroy regenerate_public_link play start_session ]
 
   # GET /children or /children.json

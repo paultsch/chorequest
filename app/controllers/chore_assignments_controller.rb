@@ -1,4 +1,5 @@
 class ChoreAssignmentsController < ApplicationController
+  before_action :authenticate_parent!
   before_action :set_chore_assignment, only: %i[ show edit update destroy ]
 
   # GET /chore_assignments — drag-and-drop scheduler
@@ -81,10 +82,16 @@ class ChoreAssignmentsController < ApplicationController
     dates_input = params[:chore_assignment].delete(:dates_input)&.to_s&.strip
     mode = params[:chore_assignment].delete(:assignment_mode)
 
-    # Verify submitted chore belongs to the current parent
+    # Verify submitted chore and child both belong to the current parent
     chore = current_parent.chores.find_by(id: chore_assignment_params[:chore_id])
     if chore.nil?
       redirect_back fallback_location: new_chore_assignment_path, alert: "Invalid chore selected."
+      return
+    end
+
+    child = current_parent.children.find_by(id: chore_assignment_params[:child_id])
+    if child.nil?
+      redirect_back fallback_location: new_chore_assignment_path, alert: "Invalid child selected."
       return
     end
 
