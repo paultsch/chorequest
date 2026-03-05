@@ -41,6 +41,9 @@ Rails.application.configure do
 
   config.action_mailer.perform_caching = false
 
+  # ActionMailbox: use relay ingress in development (test with rails action_mailbox:ingress:postfix)
+  config.action_mailbox.ingress = :relay
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 

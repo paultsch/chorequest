@@ -1,0 +1,61 @@
+<% content_for :title, "School Inbox" %>
+
+<div class="max-w-3xl mx-auto">
+
+  <%# Page header %>
+  <div class="mb-8 flex items-center gap-4">
+    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">School Inbox</h1>
+      <p class="text-gray-500 text-sm mt-0.5">Forward school emails to <span class="font-mono font-semibold text-blue-600">school@mg.pyrch.ai</span> — Rue will read them for you.</p>
+    </div>
+  </div>
+
+  <% if @needs_attention.empty? && @recent.all?(&:actioned) %>
+    <%# Empty state %>
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+      <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-700 mb-1">No school emails yet</h3>
+      <p class="text-gray-400 text-sm">Forward one to <span class="font-mono text-blue-500">school@mg.pyrch.ai</span> and Rue will summarize it here.</p>
+    </div>
+
+  <% else %>
+
+    <%# Needs Attention section %>
+    <% if @needs_attention.any? %>
+      <div class="mb-8">
+        <div class="flex items-center gap-2 mb-4">
+          <h2 class="text-lg font-bold text-gray-900">Needs Attention</h2>
+          <span class="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"><%= @needs_attention.size %></span>
+        </div>
+        <div class="space-y-4">
+          <% @needs_attention.each do |msg| %>
+            <%= render 'message_card', msg: msg, dimmed: false %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Recent / actioned section %>
+    <% actioned = @recent.select(&:actioned) %>
+    <% if actioned.any? %>
+      <div>
+        <h2 class="text-lg font-bold text-gray-700 mb-4">Recent</h2>
+        <div class="space-y-3">
+          <% actioned.each do |msg| %>
+            <%= render 'message_card', msg: msg, dimmed: true %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+  <% end %>
+</div>

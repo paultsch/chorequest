@@ -15,6 +15,7 @@ tools:
   - Read
   - Grep
   - Glob
+  - WebFetch
 model: claude-sonnet-4-6
 ---
 
@@ -86,6 +87,29 @@ Common ChoreQuest error patterns to look for:
 | `JSON::ParserError` | Bad JSON in serialized column or API response |
 | `ArgumentError: wrong number of arguments` | Minitest 6 vs Rails 7.1 incompatibility (pre-existing, not your fault) |
 | `Errno::ENOENT` | Missing file — often a view template or asset |
+| `Anthropic::Errors::InternalServerError` with status 529 | Anthropic API overloaded — check https://status.anthropic.com before debugging app code |
+| `Anthropic::Errors::ApiError` | Anthropic API error — check https://status.anthropic.com first |
+
+## Step 4b — Check Anthropic Status (if error involves the Claude API)
+
+If the error involves `Anthropic::Errors::`, `AnalyzeChorePhotoJob`, or `RueController`, **always check the Anthropic status page before diagnosing app code**:
+
+```
+WebFetch: https://www.anthropicstatus.com/
+Prompt: "Are there any active incidents or degraded services? List the title, status, and start time of any current issues."
+```
+
+If an active incident is found that matches the error (e.g. "Elevated errors on Claude Sonnet 4.6" during a 529 overload), report it prominently:
+
+```
+## External Dependency Issue
+
+**Anthropic Status:** [incident title] — [status] (since [time])
+**Impact:** This is an Anthropic-side outage, not an app bug. No code changes needed.
+**Action:** Wait for Anthropic to resolve the incident. Monitor https://www.anthropicstatus.com/
+```
+
+Only proceed to diagnose app code if the Anthropic status page shows all systems operational.
 
 ## Step 5 — Produce a fix plan
 

@@ -36,3 +36,8 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Session artifacts and generated reports
+/results/
+
+/config/credentials/production.key

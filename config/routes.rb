@@ -37,6 +37,13 @@ Rails.application.routes.draw do
   end
   resources :parents
 
+  # School Communications Hub
+  resources :school_messages, only: [:index, :update]
+
+  # Rue — AI assistant (parent-only, authenticated)
+  post   "rue/chat",  to: "rue#chat",  as: :rue_chat
+  delete "rue/clear", to: "rue#clear", as: :rue_clear
+
   # Child PIN login
   get 'child_login', to: 'child_sessions#new', as: :new_child_session
   post 'child_login', to: 'child_sessions#create', as: :child_session

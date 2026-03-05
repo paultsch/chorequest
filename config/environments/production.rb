@@ -1,6 +1,9 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
+  # ActionMailbox ingress via Mailgun webhook
+  config.action_mailbox.ingress = :mailgun
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.
@@ -72,6 +75,19 @@ Rails.application.configure do
   # config.active_job.queue_name_prefix = "chorequest_production"
 
   config.action_mailer.perform_caching = false
+
+  # Mailgun SMTP delivery for production
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address:              "smtp.mailgun.org",
+    port:                 587,
+    domain:               "mg.pyrch.ai",
+    user_name:            Rails.application.credentials.dig(:mailgun, :smtp_login),
+    password:             Rails.application.credentials.dig(:mailgun, :smtp_password),
+    authentication:       "plain",
+    enable_starttls_auto: true
+  }
+  config.action_mailer.default_url_options = { host: "chorequest.onrender.com" }
 
   # Ignore bad email addresses and do not raise email delivery errors.
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.

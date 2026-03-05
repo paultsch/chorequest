@@ -10,9 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_02_28_064319) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_05_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "action_mailbox_inbound_emails", force: :cascade do |t|
+    t.integer "status", default: 0, null: false
+    t.string "message_id", null: false
+    t.string "message_checksum", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["message_id", "message_checksum"], name: "index_action_mailbox_inbound_emails_uniqueness", unique: true
+  end
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -190,11 +199,32 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_28_064319) do
     t.string "last_name"
     t.boolean "accept_terms", default: false, null: false
     t.datetime "archived_at"
+    t.text "rue_history"
     t.index ["archived_at"], name: "index_parents_on_archived_at"
     t.index ["confirmation_token"], name: "index_parents_on_confirmation_token", unique: true
     t.index ["email"], name: "index_parents_on_email", unique: true
     t.index ["reset_password_token"], name: "index_parents_on_reset_password_token", unique: true
     t.index ["unlock_token"], name: "index_parents_on_unlock_token", unique: true
+  end
+
+  create_table "school_messages", force: :cascade do |t|
+    t.bigint "parent_id", null: false
+    t.string "subject"
+    t.text "raw_body"
+    t.string "from_address"
+    t.string "category"
+    t.string "child_name"
+    t.text "summary"
+    t.text "action_item"
+    t.date "deadline"
+    t.boolean "actioned", default: false
+    t.boolean "needs_attention", default: true
+    t.string "parse_status", default: "pending"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_id", "actioned"], name: "index_school_messages_on_parent_id_and_actioned"
+    t.index ["parent_id", "needs_attention"], name: "index_school_messages_on_parent_id_and_needs_attention"
+    t.index ["parent_id"], name: "index_school_messages_on_parent_id"
   end
 
   create_table "token_transactions", force: :cascade do |t|
@@ -217,5 +247,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_02_28_064319) do
   add_foreign_key "game_scores", "games"
   add_foreign_key "game_sessions", "children"
   add_foreign_key "game_sessions", "games"
+  add_foreign_key "school_messages", "parents"
   add_foreign_key "token_transactions", "children"
 end

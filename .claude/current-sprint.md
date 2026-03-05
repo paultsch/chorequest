@@ -1,65 +1,84 @@
-# Current Sprint — "Lock the Doors"
+# Current Sprint — "Polish the Child Experience"
 
-> Last updated: 2026-03-02 by project-manager agent (all S1–S4, H1, H2 marked done)
-> Security-reviewer confirmed all fixes PASS. Only M1 remains open.
-
----
-
-## 🔴 CRITICAL SECURITY — Fix Immediately (live app exposure)
-
-### ✅ S1 — ChildrenController: No Authentication — DONE
-**Bug:** `ChildrenController` was missing `authenticate_parent!` — unauthenticated users could `GET /children`, `GET /children/new`, and `POST /children`.
-**Fix applied:** Added `before_action :authenticate_parent!` at class level in `app/controllers/children_controller.rb` (line 2).
-
-### ✅ S2 — TokenTransactionsController: No Authentication — DONE
-**Bug:** Any unauthenticated HTTP client could `POST /token_transactions` with an arbitrary `child_id` and `amount`.
-**Fix applied:** Added `before_action :authenticate_parent!` at class level; added `child_id` ownership check in `create` — `app/controllers/token_transactions_controller.rb`.
-
-### ✅ S3 — GameSessionsController: No Authentication + Unscoped Lookups — DONE
-**Bug:** No auth guard, unscoped `GameSession.find`, user-controlled `child_id` in `create`.
-**Fix applied:** Added `authenticate_parent!` for all parent-facing actions; `set_game_session` now scopes parent actions to `current_parent.children` and verifies child session ownership for `heartbeat`/`stop`; `create` validates `child_id` ownership — `app/controllers/game_sessions_controller.rb`.
-
-### ✅ S4 — ChoreAssignmentsController: Missing Auth + Child Ownership Check — DONE
-**Bug:** Missing `authenticate_parent!`; `create` accepted any `child_id` from params.
-**Fix applied:** Added `before_action :authenticate_parent!` at class level; added `child_id` ownership validation in `create` alongside existing chore ownership check — `app/controllers/chore_assignments_controller.rb`.
+> Last updated: 2026-03-05 by primary-developer agent
+> Previous sprint "Lock the Doors" fully complete — all items S1–S4, H1, H2, B1, B2, B3, M1 done and committed (ccb405b).
 
 ---
 
-## 🟠 HIGH — Fix This Week
+## ✅ DONE — Item 4: Child Status Language
 
-### ✅ H1 — GameSessionsController: Free Session via duration_minutes=0 — DONE
-**Bug:** `create` accepted user-controlled `duration_minutes` with no minimum — submitting `0` created a free session.
-**Fix applied:** Enforced `duration_minutes >= 1` before token deduction in `app/controllers/game_sessions_controller.rb`.
+**Goal:** Replace clinical adult-facing status labels on the child's page with age-appropriate language.
 
-### ✅ H2 — Layout: Child.find Raises 500 on Deleted Child — DONE
-**Bug:** `application.html.erb` called `Child.find(session[:child_id])` which raises 500 if the child was deleted.
-**Fix applied:** Changed to `Child.find_by(id: session[:child_id])` inline in the `elsif` condition; stale session cleared in the `else` branch — `app/views/layouts/application.html.erb`.
-
-### ✅ B2 — Play Gate Bypass — DONE
-**Fix applied:** Changed `where(completed: [false, nil])` to `where.not(approved: true)` in both:
-- `app/controllers/children_controller.rb` (line 32)
-- `app/views/children/show.html.erb` (line 146)
-
-### ✅ B3 — Parent Mobile Nav Broken — DONE
-**Fix applied:** Added the missing `data-nav-target="menu"` dropdown block to the parent signed-in section of `app/views/layouts/application.html.erb`.
+**Files changed:**
+- `app/views/children/show.html.erb` — replaced all status labels (replace_all):
+  - `"Awaiting review"` → `"Being checked... 👀"`
+  - `"Rejected"` → `"Try again! 🔄"`
+  - `"Completed ✓"` → `"Done! ⭐"`
 
 ---
 
-## 🟡 MEDIUM
+## ✅ DONE — Item 5: Sign-in Error Styling
 
-### ✅ M1 — GameScoresController: Unauthenticated Score Submissions — DONE
-**Bug:** `GameScoresController#create` accepted unauthenticated score submissions with arbitrary `child_id` and `game_id` params, allowing score poisoning for any child.
-**Fix applied:** Removed the fallback `child_id`/`game_id` path entirely. Scores now require a `session_id`, and the caller must be authorized (matching `session[:child_id]` or owning parent) — `app/controllers/game_scores_controller.rb`.
+**Investigation finding:** `flash[:alert]` is already rendered globally in the layout's `<main>` section (outside auth guards), so Devise login failures already display a styled red banner. No code change needed.
 
 ---
 
-## Confirmed Fixed (no code change needed this sprint)
+## ✅ DONE — B4: Child Play Button Nav Sync
 
-### ✅ B1 — Data Leak: Unscoped ChoreAssignment Query — DONE (prior sprint)
-**Status:** Confirmed fixed during a previous scheduler refactor — query is now scoped to `current_parent`. No further action required.
+**Fix applied:** Moved `render 'bottom_nav'` inside the `<turbo-frame id="chore_status">` block in `app/views/public/show.html.erb`. Removed the redundant outer `todays_ready` recomputation. The bottom nav now re-renders on every 15-second poll so the Play button state stays in sync.
+
+---
+
+## ✅ DONE — PIN Code Visibility
+
+**Fix applied:** `app/views/children/index.html.erb` — replaced plaintext `<div>PIN: ...></div>` with a `<details>/<summary>` Show/Hide toggle (zero JS required).
+
+---
+
+## ✅ DONE — School Communications Hub POC
+
+**Goal:** Forward school emails to `school@mg.pyrch.ai` and have Rue parse them into structured summaries with action items and deadlines. Parents see a clean inbox UI.
+
+**Files created:**
+- `db/migrate/20260305020000_create_school_messages.rb` — school_messages table with category, child_name, summary, action_item, deadline, actioned, needs_attention, parse_status
+- `app/models/school_message.rb` — belongs_to :parent, scopes: needs_attention, actioned, recent
+- `app/mailboxes/school_communications_mailbox.rb` — receives email to school@mg.pyrch.ai, creates SchoolMessage, enqueues ParseSchoolEmailJob
+- `app/jobs/parse_school_email_job.rb` — calls Claude claude-haiku-4-5, returns structured JSON, updates message fields
+- `app/controllers/school_messages_controller.rb` — authenticate_parent!, index (needs_attention + recent), update (mark done)
+- `app/views/school_messages/index.html.erb` — Tailwind inbox with Needs Attention section, empty state
+- `app/views/school_messages/_message_card.html.erb` — color-coded category chips, spinner for pending, warning for failed parse, action item + deadline display, Mark Done button
+
+**Files modified:**
+- `app/mailboxes/application_mailbox.rb` — added routing rule for school@mg.pyrch.ai → :school_communications
+- `app/models/parent.rb` — added has_many :school_messages, dependent: :destroy
+- `app/mailers/application_mailer.rb` — updated default from to noreply@mg.pyrch.ai
+- `config/environments/production.rb` — added Mailgun SMTP settings, action_mailbox.ingress :mailgun
+- `config/environments/development.rb` — added action_mailbox.ingress :relay
+- `config/routes.rb` — added resources :school_messages, only: [:index, :update]
+- `app/views/layouts/application.html.erb` — added "School" nav link (desktop + mobile hamburger) for parent_signed_in? section
+
+**ActionMailbox install ran:** `rails action_mailbox:install` + `rails db:migrate`
+Migration `20260305014740_create_action_mailbox_tables` applied (action_mailbox_inbound_emails table).
+Migration `20260305020000_create_school_messages` applied.
+
+**Credentials to add manually (rails credentials:edit --environment production):**
+```yaml
+action_mailbox:
+  mailgun_signing_key: <HTTP webhook signing key from Mailgun>
+
+mailgun:
+  api_key: <Private API key from Mailgun>
+  smtp_login: postmaster@mg.pyrch.ai
+  smtp_password: <SMTP password from Mailgun>
+```
+
+**Mailgun webhook to configure:**
+- URL: `https://chorequest.onrender.com/rails/action_mailbox/mailgun/inbound_emails/mime`
+- Method: POST
+- In Mailgun dashboard: Routes → Create Route → match recipient `school@mg.pyrch.ai` → forward to the webhook URL above
 
 ---
 
 ## After This Sprint
-Next up: child status language, sign-in error styling, child Play button nav sync, hide PIN codes.
+Next priorities: confetti celebration animation on chore approval, photo preview before submission, AI status language during pending analysis, and the parent Settings page redesign.
 Full prioritized backlog: run the `project-manager` agent or see `CLAUDE.md` Ideas Backlog.

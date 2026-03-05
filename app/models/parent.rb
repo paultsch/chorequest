@@ -6,6 +6,7 @@ class Parent < ApplicationRecord
 
 	has_many :children, dependent: :destroy
 	has_many :chores, dependent: :destroy
+	has_many :school_messages, dependent: :destroy
 
 	validates :name, presence: true
 end
