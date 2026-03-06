@@ -62,6 +62,12 @@ gem "connection_pool", "~> 2.5"  # pin to 2.x; 3.0.2 has a Ruby 3.3 syntax error
 # Claude AI API client
 gem "anthropic"
 
+# Stripe payments
+gem "stripe", "~> 13.0"
+
+# Google Cloud Storage for Active Storage
+gem "google-cloud-storage", "~> 1.50", require: false
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]
