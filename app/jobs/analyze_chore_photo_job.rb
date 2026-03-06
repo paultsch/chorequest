@@ -26,18 +26,7 @@ class AnalyzeChorePhotoJob < ApplicationJob
   private
 
   def analyze_photo(attempt, chore)
-    tempfile = Tempfile.new(['chore_photo', '.jpg'])
-    tempfile.binmode
-    tempfile.write(attempt.photo.download)
-    tempfile.rewind
-
-    resized = ImageProcessing::Vips
-      .source(tempfile.path)
-      .resize_to_limit(1568, 1568)
-      .convert("jpeg")
-      .call
-
-    base64_image = Base64.strict_encode64(File.binread(resized.path))
+    base64_image = Base64.strict_encode64(attempt.photo.download)
 
     prompt = <<~PROMPT
       You are evaluating whether a child has completed a household chore.
@@ -81,8 +70,6 @@ class AnalyzeChorePhotoJob < ApplicationJob
     message = lines[1].to_s.strip
 
     [verdict, message]
-  ensure
-    tempfile&.close!
   end
 
   def apply_verdict(attempt, assignment, chore, verdict, message)
