@@ -104,11 +104,30 @@
         </div>
       <% end %>
 
+      <%# Notification opt-in — shown after child submits a chore (has a pending attempt) %>
+      <% if @assignments.any? { |a| a.latest_attempt&.status_pending? } && @child.push_subscriptions.none? %>
+        <div class="mt-4" data-controller="notifications"
+             data-notifications-subscribed-value="false">
+          <div data-notifications-target="banner" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🔔</span>
+              <p class="text-sm text-blue-800 font-medium">Want to know the moment your chore is approved?</p>
+            </div>
+            <button data-action="click->notifications#enable"
+                    class="shrink-0 bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 transition">
+              Notify me!
+            </button>
+          </div>
+          <div data-notifications-target="iosPrompt" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
+            <span>📲</span>
+            <p class="text-xs text-amber-800">Add this app to your Home Screen first, then you can get notifications!</p>
+          </div>
+        </div>
+      <% end %>
+
+      <%= render 'bottom_nav', child: @child, token: params[:token], todays_ready: todays_ready %>
     </turbo-frame>
   </div>
-
-  <%# todays_ready for the bottom nav (computed outside the turbo-frame) %>
-  <% todays_ready = @assignments.any? && @assignments.all? { |a| a.approved == true } %>
 
   <%# Upcoming chores — collapsed by default %>
   <details class="mt-8 group">
@@ -165,5 +184,3 @@
     </div>
   </details>
 </div>
-
-<%= render 'bottom_nav', child: @child, token: params[:token], todays_ready: todays_ready %>

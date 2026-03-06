@@ -4,6 +4,7 @@ class Child < ApplicationRecord
   has_many :chore_assignments, dependent: :destroy
   has_many :token_transactions, dependent: :destroy
   has_many :game_sessions, dependent: :destroy
+  has_many :push_subscriptions, dependent: :destroy
 
   validates :name, presence: true
 

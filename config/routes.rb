@@ -67,6 +67,18 @@ Rails.application.routes.draw do
     end
     post 'stop_impersonation', to: 'impersonations#destroy', as: :stop_impersonation
   end
+  # Billing / Stripe
+  namespace :billing do
+    post :checkout,  to: 'checkout#create'
+    get  :success,   to: 'checkout#success'
+    get  :cancel,    to: 'checkout#cancel'
+    post :webhook,   to: 'webhooks#create'
+    get  :portal,    to: 'portal#create'
+  end
+
+  # Push notification subscriptions
+  resources :push_subscriptions, only: [:create, :destroy]
+
   # Root path
   root to: 'home#index'
 

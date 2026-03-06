@@ -80,3 +80,34 @@ self.addEventListener('fetch', (event) => {
   }
   // Everything else falls through to the browser's default fetch handling
 });
+
+// ---------------------------------------------------------------------------
+// Push notification handlers
+// ---------------------------------------------------------------------------
+
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() ?? {}
+  const title = data.title || 'ChoreQuest'
+  const options = {
+    body:  data.body  || '',
+    icon:  '/icons/icon-192.png',
+    badge: '/icons/icon-96.png',
+    data:  { url: data.url || '/' },
+    requireInteraction: false
+  }
+  event.waitUntil(self.registration.showNotification(title, options))
+})
+
+// Tap notification -> open (or focus) the relevant page
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url || '/'
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((windowClients) => {
+        const existing = windowClients.find((c) => c.url.endsWith(url) && 'focus' in c)
+        if (existing) return existing.focus()
+        return clients.openWindow(url)
+      })
+  )
+})

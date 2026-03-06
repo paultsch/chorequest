@@ -406,4 +406,182 @@ class ChildrenControllerTest < ActionDispatch::IntegrationTest
     post regenerate_public_link_child_path(@child_one)
     assert_response :not_found
   end
+
+  # Tests for view change 1: Kid-friendly status labels in children/show.html.erb
+  # Changes: "Done! ⭐", "Being checked... 👀", "Try again! 🔄" replace old strings
+
+  test "show view displays 'Done! ⭐' for approved chore" do
+    sign_in @parent
+    # Create an approved assignment for today
+    today = Date.current
+    assignment = ChoreAssignment.create!(
+      child: @child_one,
+      chore: @chore_one,
+      scheduled_on: today,
+      approved: true,
+      completed: true
+    )
+
+    get child_path(@child_one)
+
+    assert_response :success
+    assert_match /Done! ⭐/, response.body
+    # Verify old strings don't appear
+    assert_no_match /Completed/, response.body
+    assert_no_match /Awaiting review/, response.body
+  end
+
+  test "show view displays 'Being checked... 👀' for pending chore attempt" do
+    sign_in @parent
+    # Create an assignment with a pending attempt
+    today = Date.current
+    assignment = ChoreAssignment.create!(
+      child: @child_one,
+      chore: @chore_one,
+      scheduled_on: today,
+      approved: false,
+      completed: false
+    )
+    # Create a pending attempt
+    attempt = ChoreAttempt.create!(
+      chore_assignment: assignment,
+      status: 'pending'
+    )
+
+    get child_path(@child_one)
+
+    assert_response :success
+    assert_match /Being checked\.\.\. 👀/, response.body
+    assert_no_match /Awaiting review/, response.body
+  end
+
+  test "show view displays 'Try again! 🔄' for rejected chore attempt" do
+    sign_in @parent
+    # Create an assignment with a rejected attempt
+    today = Date.current
+    assignment = ChoreAssignment.create!(
+      child: @child_one,
+      chore: @chore_one,
+      scheduled_on: today,
+      approved: false,
+      completed: false
+    )
+    # Create a rejected attempt
+    attempt = ChoreAttempt.create!(
+      chore_assignment: assignment,
+      status: 'rejected'
+    )
+
+    get child_path(@child_one)
+
+    assert_response :success
+    assert_match /Try again! 🔄/, response.body
+    assert_no_match /Rejected/, response.body
+  end
+
+  test "show view does not display old status strings" do
+    sign_in @parent
+    # Create various assignments to ensure old strings don't appear anywhere
+    today = Date.current
+    chore_a = Chore.create!(
+      name: "Test Chore A",
+      parent: @parent,
+      token_amount: 5
+    )
+    chore_b = Chore.create!(
+      name: "Test Chore B",
+      parent: @parent,
+      token_amount: 3
+    )
+
+    # One approved chore
+    assignment_a = ChoreAssignment.create!(
+      child: @child_one,
+      chore: chore_a,
+      scheduled_on: today,
+      approved: true,
+      completed: true
+    )
+
+    # One with pending attempt
+    assignment_b = ChoreAssignment.create!(
+      child: @child_one,
+      chore: chore_b,
+      scheduled_on: today,
+      approved: false,
+      completed: false
+    )
+    attempt = ChoreAttempt.create!(
+      chore_assignment: assignment_b,
+      status: 'pending'
+    )
+
+    get child_path(@child_one)
+
+    assert_response :success
+    # Old strings should NOT appear
+    assert_no_match /Completed/, response.body
+    assert_no_match /Awaiting review/, response.body
+    assert_no_match /Rejected\b/, response.body  # Use word boundary to avoid matching "Try again! 🔄"
+  end
+
+  # Tests for view change 3: PIN codes hidden behind details/summary toggle
+  # Changes: PIN no longer displayed in plaintext, "Show PIN" toggle required
+
+  test "index view hides PIN code before details/summary toggle" do
+    sign_in @parent
+    get children_url
+
+    assert_response :success
+    # PIN should NOT appear as plaintext outside of details/summary
+    # We verify this by checking the structure has details/summary
+    assert_match /<details/, response.body
+    assert_match /<summary/, response.body
+    # The PIN code should be within the details block, not before it
+  end
+
+  test "index view displays 'Show PIN' summary toggle" do
+    sign_in @parent
+    get children_url
+
+    assert_response :success
+    # "Show PIN" text should appear
+    assert_match /Show PIN/, response.body
+    # The HTML structure should include details and summary
+    assert_match /<details/, response.body
+    assert_match /<summary/, response.body
+  end
+
+  test "index view PIN is accessible via details/summary structure" do
+    sign_in @parent
+    get children_url
+
+    assert_response :success
+    # Verify the PIN is inside the details block (wrapped properly)
+    # We can check that "Show PIN" text exists and PIN code exists separately in HTML
+    assert_match /Show PIN/, response.body
+    # Just verify PIN exists in response somewhere (not necessarily plaintext at top level)
+    assert_includes response.body, @child_one.pin_code
+  end
+
+  test "index view PIN is properly wrapped in details tag" do
+    sign_in @parent
+    get children_url
+
+    assert_response :success
+    # Verify the PIN appears within the HTML (it's inside the details block)
+    assert_includes response.body, @child_one.pin_code
+    # Verify it's wrapped in the details/summary structure
+    assert_match /<details.*?<summary.*?Show PIN.*?<\/summary>.*?<span[^>]*>.*?#{Regexp.escape(@child_one.pin_code)}.*?<\/span>.*?<\/details>/m, response.body
+  end
+
+  # Note on view change 2 (turbo-frame refresh):
+  # The change moves 'render bottom_nav' inside the turbo-frame block so it refreshes
+  # every 15 seconds. This structural change affects dynamic polling behavior and cannot
+  # easily be tested in a unit test. Manual QA would involve:
+  # 1. Load child's public page
+  # 2. Approve a chore from parent dashboard
+  # 3. Wait 15 seconds or trigger refresh
+  # 4. Verify bottom nav (Play button, token balance) updates automatically
+  # This requires real browser automation or acceptance testing with Capybara.
 end

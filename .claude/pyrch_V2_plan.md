@@ -629,11 +629,19 @@ Rue confirms: "Done! He'll see it — the most-asked things get built first."
 **Deliverables:**
 
 #### Stripe Subscription
-- [ ] `Subscription` model: `household_id`, `plan` (`free`, `family`), `stripe_subscription_id` (nullable), `current_period_end`
-- [ ] $10/month `family` plan; free plan: 1 child, basic chore tracking, no AI analysis, no games
-- [ ] Stripe webhook handling (subscription created/updated/cancelled)
-- [ ] Feature gates: AI photo analysis and Games Module gated behind `family` plan
-- [ ] `Household#plan` helper returns `:free` or `:family`
+**POC validated on ChoreQuest 2026-03-05** — full payment loop working end-to-end in test mode.
+
+- [ ] `gem "stripe", "~> 13.0"` in Gemfile
+- [ ] Stripe columns on `Household`: `stripe_customer_id` (unique index), `stripe_subscription_id` (unique index), `subscription_status`; `plan_tier` already added in Phase 1 (default: `trial`)
+- [ ] `config/initializers/stripe.rb`: `Stripe.api_key = Rails.application.credentials.dig(:stripe, :secret_key)`
+- [ ] Credentials structure: `stripe: { secret_key:, publishable_key:, price_id:, webhook_secret: }`
+- [ ] Billing routes: `namespace :billing` with `POST checkout`, `GET success`, `GET cancel`, `POST webhook`, `GET portal`
+- [ ] `Billing::CheckoutController#create`: `Stripe::Checkout::Session.create(mode: "subscription", metadata: { household_id: }, success_url:, cancel_url:)`; redirect with `allow_other_host: true`; **button must have `data: { turbo: false }`** — Turbo intercepts external redirects and swallows them silently
+- [ ] `Billing::WebhooksController`: `skip_before_action :verify_authenticity_token`; verify `Stripe-Signature` with `Stripe::Webhook.construct_event`; handle: `checkout.session.completed` → set customer_id, subscription_id, plan_tier `paid`, status `active`; `customer.subscription.updated` → sync status; `customer.subscription.deleted` → downgrade to `free`; `invoice.payment_failed` → set `past_due`
+- [ ] `Billing::PortalController#create`: `Stripe::BillingPortal::Session.create(customer: household.stripe_customer_id)`; redirect with `allow_other_host: true`
+- [ ] Upgrade banner on household admin dashboard: shown when `plan_tier == "free"` or `subscription_status == "past_due"`
+- [ ] All feature gates via `PlanPolicy` service object — never scattered across controllers
+- [ ] **Production**: register webhook URL (`https://pyrch.ai/billing/webhook`) in Stripe Dashboard → Developers → Webhooks; the dashboard generates a separate `whsec_` secret — different from the local CLI listener secret; add to production credentials
 
 #### Marketing Site
 - [ ] Public landing page: "Your kids earn their screen time. No more nagging." headline
@@ -720,20 +728,59 @@ Rue confirms: "Done! He'll see it — the most-asked things get built first."
 
 **Goal (POC first):** Validate email ingestion and Rue parsing before building the full module.
 
-**POC scope:**
-- [ ] ActionMailbox setup + Mailgun inbound routing to `/webhooks/inbound_email`
-- [ ] `SchoolMessage`: `household_id`, `source` enum (`email`, `sms`, `manual`), `raw_content`, `parsed_summary`, `child_id` (nullable), `category` enum (`event`, `homework`, `permission_slip`, `absence_alert`, `newsletter`, `announcement`, `unknown`), `action_item`, `deadline`, `actioned`, `adult_only`
-- [ ] `RueParseMessageJob`: calls Claude API, returns structured JSON; writes parsed fields back to `SchoolMessage`
-- [ ] Basic inbox UI: unactioned items surfaced at top; filter by child and category
-- [ ] Validate: is Rue's parsing reliable enough to be useful?
+**POC scope — validated on ChoreQuest 2026-03-04:**
+- [x] ActionMailbox setup + Mailgun inbound routing to `/webhooks/inbound_email`
+- [x] `SchoolMessage`: `subject`, `raw_body`, `from_address`, `category`, `child_name`, `summary`, `action_item`, `deadline`, `actioned`, `needs_attention`, `parse_status` fields (household-scoped in Pyrch)
+- [x] `SchoolCommunicationsMailbox`: matches sender email to parent; silently drops unknown senders
+- [x] `ParseSchoolEmailJob` (GoodJob): calls Claude Haiku, returns structured JSON; writes parsed fields back to `SchoolMessage`
+- [x] `/school_messages` inbox: "Needs Attention" section at top, color-coded category chips, "Mark Done" button, parse status indicators
+- [x] **POC verdict: VALIDATED** — Claude Haiku reliably parses category, child_name, summary, action_item, deadline, needs_attention from both simple and ambiguous school emails; proceed to full module
 
-**Full module (only if POC validates):**
+**Pyrch V2 POC schema (carry forward with household scoping):**
+```ruby
+SchoolMessage
+  household_id:     references (NOT NULL)
+  source:           enum ['email', 'sms', 'manual'] (default: 'email')
+  subject:          string
+  raw_body:         text
+  from_address:     string
+  category:         enum ['event', 'homework', 'permission_slip', 'absence_alert', 'newsletter', 'announcement', 'unknown']
+  child_name:       string (nullable — parsed from email, not a FK; matched to Child later)
+  summary:          text
+  action_item:      text
+  deadline:         date (nullable)
+  needs_attention:  boolean (default: false) — AI sets this; drives inbox ordering
+  actioned:         boolean (default: false) — parent marks done
+  parse_status:     enum ['pending', 'parsed', 'failed'] (default: 'pending')
+```
+
+**Mailbox matching rule (from POC):** Match `mail.from.first` against `User.email` (exact, case-insensitive). Silently `return nil` for unknown senders — never bounce (avoids spam loops). In Pyrch, scope the `User` lookup to the household implied by the inbound address.
+
+**Full module (only if POC validates — it does):**
+- [ ] Per-household inbound email addresses (not a shared `school@` address) — unique subdomain or `+tag` routing in Mailgun
 - [ ] Twilio SMS number per household
 - [ ] `CalendarEventProposal` + `HomeworkProposal`: one-tap confirmation creates Event or HomeworkTask
-- [ ] Child visibility controls (`adult_only` flag)
+- [ ] Child visibility controls (`adult_only` flag on SchoolMessage)
 - [ ] Rue tools: `check_school_inbox`, `get_message_detail`, `action_message`, `confirm_calendar_proposal`, `confirm_homework_proposal`, `dismiss_proposal`
 - [ ] Third-party integrations (ClassDojo, Remind, Google Classroom): deferred; schema accepts additional `source` enum values without migration
 - [ ] Security audit: Mailgun/Twilio signature validation on all webhook endpoints
+
+**Mailgun credential structure for Pyrch:**
+```yaml
+# config/credentials.yml.enc
+action_mailbox:
+  mailgun_signing_key: <HTTP webhook signing key>   # from Mailgun → Sending → Webhooks
+mailgun:
+  api_key: <Private API key>                         # from Mailgun → Settings → API Keys
+  smtp_login: postmaster@mg.pyrch.ai
+  smtp_password: <SMTP password>
+```
+
+**DNS records on GoDaddy for mg.pyrch.ai:**
+- SPF TXT record on mg subdomain
+- DKIM TXT record (Mailgun-generated)
+- CNAME tracking record (email.mg.pyrch.ai → mailgun.org)
+- Two MX records pointing to Mailgun servers
 
 ---
 
@@ -884,6 +931,103 @@ end
 - Include today's assignments, children, and chores in the system prompt so Rue can answer status questions without a tool call
 - Rebuild context on every request (it is the system prompt, not history) so it is always fresh
 
+### School Communications Hub — POC Learnings (2026-03-04)
+
+**What we built on ChoreQuest as a POC:**
+- Mailgun for both inbound (ActionMailbox) and outbound (Devise emails) — single service handles both; use a custom domain (mg.pyrch.ai) from day one, not the sandbox
+- Custom domain DNS: SPF TXT, DKIM TXT, CNAME tracking record, two MX records — all on GoDaddy, all completed in under 30 minutes
+- ActionMailbox with `:mailgun` ingress — Rails handles Mailgun webhook signature verification automatically; no custom HMAC code needed
+- `SchoolCommunicationsMailbox`: sender matched by email address; silently returns `nil` for unknown senders (never bounce — bouncing unknown senders can create spam loops)
+- `ParseSchoolEmailJob` (GoodJob): calls Claude Haiku with a structured JSON extraction prompt; writes parsed fields back to `SchoolMessage`
+- Inbox UI: "Needs Attention" items surfaced at top; color-coded category chips; "Mark Done" per message; parse status indicator
+
+**Parsing quality verdict:** Claude Haiku reliably extracted category, child_name, summary, action_item, deadline, and needs_attention from both simple and ambiguous emails (multiple children mentioned, vague dates like "this Friday", mixed topics in one email). Reliable enough to build the full module.
+
+**Hard-won technical lessons (do not repeat):**
+
+1. **`ActionView::Base.full_sanitizer` crashes in background jobs.** `ActionView::Base.full_sanitizer.sanitize(...)` raises `ArgumentError` in GoodJob workers because ActionView is not fully initialized outside the render stack. Use `Rails::Html::FullSanitizer.new.sanitize(...)` — comes directly from the `rails-html-sanitizer` gem and works everywhere including jobs.
+
+2. **Claude Haiku wraps JSON in markdown fences despite explicit instructions.** Even with "Respond with ONLY valid JSON, no markdown fences" in the system prompt, Haiku occasionally wraps the output in ` ```json ... ``` `. Always strip fences before `JSON.parse`:
+   ```ruby
+   text = text.strip
+             .gsub(/\A```(?:json)?\n?/, "")
+             .gsub(/\n?```\z/, "")
+             .strip
+   parsed = JSON.parse(text)
+   ```
+
+3. **Mailgun sandbox can only send to whitelisted addresses.** The sandbox domain blocks outbound delivery to any non-whitelisted email. For a real product, set up a custom sending domain (mg.pyrch.ai) from the beginning — DNS setup takes under 30 minutes and eliminates all sandbox restrictions. Do not use the sandbox for any user-visible email flow.
+
+4. **Match parent by email, not by token or household.** Identifying which household forwarded an email by matching `mail.from.first` against `User.email` (case-insensitive) is clean, requires no extra fields, and works naturally with how people forward school emails. In Pyrch, scope the `User` lookup to the inbound address's household; silently drop emails that don't match any known user.
+
+5. **`child_name` is a parsed string, not a FK.** The AI extracts a child name from the email text. Store it as a plain string on `SchoolMessage`. Do not attempt FK resolution at parse time — the name may be a nickname, a partial name, or ambiguous. Build a matching UI pass separately where the parent confirms which `Child` record it refers to.
+
+### Stripe / Payments (2026-03-05)
+
+- **`gem "stripe", "~> 13.0"`** — verified working with Rails 7.1 + Ruby 3.3
+- **Turbo kills external redirects silently** — any `button_to` or form that redirects off-domain (Stripe Checkout, Stripe Portal) must have `data: { turbo: false }`; without it the 302 fires but the browser never follows it; no error is shown — it just looks broken
+- **Webhook controller must skip CSRF** — `skip_before_action :verify_authenticity_token` on the webhook controller only; never skip globally
+- **Metadata is how you link Stripe back to your DB** — pass `metadata: { household_id: current_household.id }` on Checkout Session creation; the `checkout.session.completed` webhook can then do `Household.find(session.metadata["household_id"])` cleanly; no need for email matching
+- **Two different webhook secrets** — local dev uses the `whsec_` printed by `stripe listen`; production uses a separate `whsec_` from Stripe Dashboard → Developers → Webhooks; keep them in separate credential environments
+- **Local dev requires 3 terminals** — Rails server, `stripe listen --forward-to localhost:3000/billing/webhook`, and your command line; the listener must be running before a payment completes or the webhook is never delivered to your app
+- **Replay missed events** — `stripe events resend <evt_id>`; get the event ID from `stripe events list --limit 3`; requires the listener to be running at replay time
+- **Stripe CLI login** — `stripe login` links the CLI to your Stripe account; confirms with "Done! The Stripe CLI is configured for [account name]"
+- **`allow_other_host: true`** — required on both `redirect_to session.url` (Checkout) and `redirect_to portal_session.url` (Portal); Rails blocks cross-host redirects by default in production
+
+### Google Cloud Storage + Active Storage (2026-03-06)
+
+**Infrastructure decisions:**
+- Use GCS for Active Storage in production — Render.com's ephemeral disk wipes uploaded files on every deploy; GCS is the correct default for any persistent file storage
+- Render Starter plan ($7/month) is the minimum for AI photo analysis — the free tier (512MB RAM) runs out of memory when downloading and processing images with Vips; Starter gives enough headroom
+- For POC / early stages: skip Vips resize entirely — send the raw photo to Claude as base64; phone photos are under 5MB which Claude handles fine, and this eliminates the memory spike
+
+**GCS setup sequence (do in this order):**
+1. Create a GCS bucket (us-central1 works well with Render US servers)
+2. Create a Service Account with `Storage Object Admin` role — **scope to the bucket, not the project**
+3. Grant the service account on the bucket's own Permissions tab — do NOT rely on project-level role assignment alone; they are independent
+4. Download the JSON key file and store it as structured YAML in Rails production credentials under `gcs.json_key_data`
+5. In `storage.yml`, call `.to_json` on the credentials hash: `credentials: <%= Rails.application.credentials.dig(:gcs, :json_key_data).to_json %>` — a raw Ruby hash is not valid YAML and causes a parse error at boot
+
+**Google Workspace org policy gotcha:**
+- `iam.disableServiceAccountKeyCreation` is enforced by default on Google Workspace orgs; must disable BOTH the legacy constraint AND `iam.managed.disableServiceAccountKeyCreation` in Organization Policy
+- Requires the `Organization Policy Administrator` role — this is separate from `Organization Administrator` and must be granted explicitly
+- Org-level IAM is at a different URL/scope than project-level IAM; switch the project picker to the org level to access it
+
+**Common errors and fixes:**
+- `YAML syntax error... did not find expected node content while parsing a flow node` — missing `.to_json` on the credentials hash in storage.yml
+- `Google::Cloud::NotFoundError: The specified bucket does not exist` — bucket name in credentials does not match the actual GCS bucket name exactly (case-sensitive)
+- `Google::Cloud::PermissionDeniedError: does not have storage.objects.create access` — service account needs `Storage Object Admin` granted on the bucket's Permissions tab, not just at project level
+- `Ran out of memory (used over 512MB)` — Vips image processing is too heavy for the Render free tier; either upgrade to Starter or skip the resize step
+
+**storage.yml pattern that works:**
+```yaml
+google:
+  service: GCS
+  project: <%= Rails.application.credentials.dig(:gcs, :project_id) %>
+  credentials: <%= Rails.application.credentials.dig(:gcs, :json_key_data).to_json %>
+  bucket: <%= Rails.application.credentials.dig(:gcs, :bucket) %>
+```
+
+**Credentials structure:**
+```yaml
+gcs:
+  project_id: "your-gcp-project-id"
+  bucket: "your-bucket-name"   # must match GCS console exactly — case-sensitive
+  json_key_data:
+    type: "service_account"
+    project_id: "..."
+    private_key_id: "..."
+    private_key: "-----BEGIN RSA PRIVATE KEY-----\n..."
+    client_email: "..."
+    client_id: "..."
+    auth_uri: "https://accounts.google.com/o/oauth2/auth"
+    token_uri: "https://oauth2.googleapis.com/token"
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs"
+    client_x509_cert_url: "..."
+```
+
+---
+
 ### Token / Game System
 - **Heartbeat skips CSRF only for specific actions** — `skip_before_action :verify_authenticity_token, only: [:heartbeat, :stop]`; never skip globally
 - **`stopped_at` is nil at creation** — only set when the session actually ends; `before_create` must NOT touch it
@@ -945,4 +1089,539 @@ end
 
 ---
 
-*Last updated: 2026-03-04. Synthesized from rails-architect, project-manager, pyrch-planner, and primary-developer agent reports. Rue lessons added after ChoreQuest implementation and debugging session.*
+## Environment & Deployment Architecture
+
+> This section is the authoritative reference for how Pyrch infrastructure is organized across all three environments. Read it before touching secrets, creating Render services, or configuring any external service.
+
+---
+
+### Three Environments
+
+| Environment | Purpose | URL | Hosting |
+|---|---|---|---|
+| **Development** | Local feature work and debugging | `http://localhost:3000` | WSL2 / Ubuntu 22.04 on Windows 11 |
+| **Staging** | Pre-production QA before merging to main | `https://pyrch-staging.onrender.com` (or similar) | Render.com — dedicated web service |
+| **Production** | Live app at pyrch.ai | `https://pyrch.ai` | Render.com — web service + worker |
+
+Development runs on the developer's local WSL2 machine (`/home/paul/projects/pyrch`). Staging and production are both Render.com deployments — two entirely separate Render services pointing at the same GitHub repo but different branches.
+
+---
+
+### Git Branching Strategy
+
+```
+main ─────────────────────────────────────────── production deploy
+        │
+        └── staging ──────────────────────────── staging deploy
+                  │
+                  └── feature/xxx ──────────────── developer works here
+```
+
+- **`feature/*` branches** — all development work happens here; PR targets `staging`
+- **`staging` branch** — auto-deploys to Render staging on push; integration testing happens here; QA passes here before promotion
+- **`main` branch** — auto-deploys to Render production on push; no direct commits; only fast-forward merges from `staging` after QA passes
+- **Hotfix exception** — critical production bugs can be branched directly from `main`, applied to both `main` and `staging` immediately after
+
+This is a change from ChoreQuest where `main` was the only branch and deployed directly to production on every push. That pattern is too risky for a live multi-household app.
+
+---
+
+### Render.com Service Configuration
+
+Pyrch requires **four Render services** in production, **three in staging**:
+
+#### Production Services
+
+| Service | Type | Plan | Purpose |
+|---|---|---|---|
+| `pyrch-web` | Web Service | Starter ($7/mo minimum) | Rails app server (Puma) |
+| `pyrch-worker` | Background Worker | Starter ($7/mo) | GoodJob background job processor |
+| `pyrch-db` | PostgreSQL | Starter ($7/mo) | Primary database (Render managed) |
+| `pyrch-staging-web` | Web Service | Starter | Staging web (see Staging section) |
+
+**Why Starter minimum:** The free tier (512MB RAM) OOMs when Vips processes image uploads. GCS bypasses most Vips work (photos go directly to GCS), but Claude's image analysis still loads the blob into memory. Starter ($7/mo) gives enough headroom. This was learned on ChoreQuest — do not attempt to run AI photo analysis on Render free tier.
+
+#### Staging Services
+
+| Service | Type | Plan | Purpose |
+|---|---|---|---|
+| `pyrch-staging-web` | Web Service | Starter | Staging Rails app |
+| `pyrch-staging-worker` | Background Worker | Starter | Staging GoodJob worker |
+| `pyrch-staging-db` | PostgreSQL | Free tier | Staging database (smaller; free is fine) |
+
+#### GoodJob: Separate Worker Process (Not In-Process)
+
+ChoreQuest runs GoodJob in-process (same Puma process as the web server). This causes two problems:
+1. Long-running jobs (AI analysis, email parsing) block web threads
+2. If the web process restarts (deploy), in-flight jobs are lost
+
+Pyrch uses GoodJob as a **separate Render Background Worker service** with its own start command:
+
+```bash
+# Web service start command
+bundle exec rails server -b 0.0.0.0 -p $PORT
+
+# Worker service start command
+bundle exec good_job start
+```
+
+Both services share the same `DATABASE_URL` (same Render PostgreSQL database). GoodJob uses the database queue — no Redis required.
+
+#### Health Check Endpoint
+
+Rails 7.1+ provides `/up` by default (returns 200 when the app is healthy). Configure Render health checks to poll `GET /up` every 30 seconds. No custom endpoint needed.
+
+#### Migrations
+
+Render does NOT run migrations automatically on deploy. Two options for Pyrch:
+
+**Option A (recommended for production):** Add a pre-deploy command in the Render web service settings:
+```bash
+bundle exec rails db:migrate
+```
+Render runs this before swapping the new instance in, so zero-downtime deploys apply migrations before traffic switches.
+
+**Option B (manual):** After deploy, use Render Shell (`your service → Shell tab`):
+```bash
+bundle exec rails db:migrate
+```
+Use this for emergency rollbacks where you need to apply the migration manually.
+
+Never use `rails db:schema:load` in production — it wipes all data.
+
+---
+
+### Background Jobs & Monitoring
+
+#### Job Backend: GoodJob (PostgreSQL-backed), not Sidekiq+Redis
+
+**Decision: GoodJob.**
+
+Sidekiq requires Redis. On Render.com, a Redis instance costs $10–15/month on top of the existing PostgreSQL service — that is a 40–60% infrastructure cost increase for a startup with single-digit family count. Pyrch already pays for PostgreSQL; GoodJob uses it as the job queue with no additional service.
+
+Sidekiq wins on raw throughput (thousands of jobs/second) and ecosystem maturity. For Pyrch's job volume — photo analysis jobs (one per chore submission), email parsing jobs, email delivery — throughput is irrelevant. The bottleneck is the Anthropic API call, not the queue. GoodJob handles this workload comfortably at any foreseeable Pyrch scale.
+
+GoodJob also provides a built-in web UI (`/good_job`) for inspecting queued, running, and failed jobs. Mount it behind `AdminUser` authentication in `routes.rb`.
+
+**Jobs in scope:**
+
+| Job | Queue | Expected duration | Notes |
+|---|---|---|---|
+| `AnalyzeChorePhotoJob` | `default` | 5–30s | Anthropic API call; network-bound |
+| `ParseSchoolEmailJob` | `default` | 3–15s | Anthropic API call |
+| `ActiveStorage::AnalyzeJob` | `default` | <1s | Rails built-in blob metadata |
+| Email delivery (ActionMailer) | `mailers` | <2s | Mailgun SMTP |
+| Push notification jobs (future) | `default` | <1s | webpush gem |
+
+**Gems to add to Pyrch Gemfile:**
+```ruby
+gem "good_job", "~> 4.0"
+```
+No Redis gem. No Sidekiq gem.
+
+#### Worker Process: Separate Render Service (Not In-Process with Puma)
+
+**Decision: always run GoodJob as a separate `pyrch-worker` Render Background Worker.**
+
+The ChoreQuest OOM problem came specifically from `ruby-vips` (libvips image processing library) loading into the Puma process during `ActiveStorage::AnalyzeJob`. Pyrch does not use image variants or libvips — photos are stored and served as-is from GCS, so that specific cause is gone.
+
+However, even without the OOM risk, running jobs in-process with Puma is still wrong for Pyrch:
+
+1. `AnalyzeChorePhotoJob` holds a Puma thread for 5–30 seconds during the Anthropic API call. With a Starter instance (1 CPU, limited threads), this starves web request threads. A child submitting a chore photo blocks other web traffic.
+2. In-process jobs die silently on deploy. GoodJob's async mode has a graceful shutdown, but Render's deploy swap is not guaranteed to drain in-flight jobs cleanly unless the worker is a separate service with its own lifecycle.
+3. Staging also uses a separate `pyrch-staging-worker` service (already in the Render services table above) — this keeps the separation consistent across environments.
+
+Set `GOOD_JOB_EXECUTION_MODE=external` on the Render web service so the web process never picks up jobs even if the worker is temporarily down.
+
+#### Error Monitoring: Sentry — add it from day one, use the free tier
+
+**Decision: install Sentry on day one, free tier.**
+
+The core problem is that background jobs currently swallow errors silently. `AnalyzeChorePhotoJob` rescues all exceptions and logs to `Rails.logger` — on Render, that means errors appear in the log stream and then scroll off. If a photo analysis job fails for every submission for 6 hours, no alert fires. The family thinks the app is broken. A parent churns.
+
+Render log drain to Papertrail is cheaper (~$7/month for 1GB logs) and simpler, but it only stores logs — you still have to grep through them manually after something goes wrong. Sentry captures the full exception with stack trace, job arguments, user context, and environment at the moment of failure, and sends an email alert.
+
+Sentry free tier gives 5,000 errors/month. At Pyrch's early scale (handful of families, ~20–50 job executions/day), the free tier is effectively unlimited. The paid tier ($26/month) is only needed when the free limit is consistently hit — that is a good problem to have and signals real user volume.
+
+**What to instrument:**
+- Background jobs: Sentry captures unhandled exceptions automatically with the Rails integration; remove the blanket `rescue => e` from `AnalyzeChorePhotoJob` and let Sentry capture it (GoodJob will retry the job per its retry policy)
+- Web requests: Sentry captures 500 errors automatically
+- Rue/AI conversation errors: instrument explicitly where the Anthropic client is called
+
+**The threshold rule:** Sentry is installed from day one. Remove it only if costs become a problem after the free tier is genuinely exhausted.
+
+**Gems to add to Pyrch Gemfile:**
+```ruby
+gem "sentry-ruby"
+gem "sentry-rails"
+```
+
+**Initializer pattern:**
+```ruby
+# config/initializers/sentry.rb
+Sentry.init do |config|
+  config.dsn = Rails.application.credentials.dig(:sentry, :dsn)
+  config.breadcrumbs_logger = [:active_support_logger, :http_logger]
+  config.traces_sample_rate = 0.1   # 10% of transactions — keeps performance quota low
+  config.profiles_sample_rate = 0.1
+  config.environment = Rails.env
+  config.enabled_environments = %w[production staging]
+end
+```
+
+Add `sentry: { dsn: "..." }` to both `staging.yml.enc` and `production.yml.enc`. Do NOT add to development credentials — you want local exceptions to raise normally, not be swallowed into Sentry's dashboard.
+
+#### GoodJob Retry Policy
+
+GoodJob retries failed jobs with exponential backoff by default. Configure explicit retry limits per job class to avoid infinite retry loops on permanent failures (e.g. a malformed photo that will always fail AI analysis):
+
+```ruby
+# In each job class
+class AnalyzeChorePhotoJob < ApplicationJob
+  queue_as :default
+  retry_on StandardError, wait: :polynomially_longer, attempts: 3
+  discard_on ActiveRecord::RecordNotFound  # attempt deleted before job ran — don't retry
+  # ...
+end
+```
+
+After 3 failed attempts, GoodJob marks the job `discarded`. Sentry captures each failure. The `ai_verdict` fallback to `NEEDS_REVIEW` ensures no child's submission is silently lost — it surfaces to the parent for manual review.
+
+---
+
+### Secrets Inventory
+
+Every secret is listed here per environment. Secrets are managed two ways in Pyrch:
+
+- **Rails encrypted credentials** — for secrets that belong in the codebase (services the app calls directly); edited with `rails credentials:edit --environment <env>`
+- **Render environment variables** — for infrastructure secrets Render itself needs to know (master key, database URL)
+
+#### Development Secrets
+
+Stored in `config/credentials.yml.enc` (encrypted with `config/master.key` — gitignored, local only).
+
+```yaml
+# config/credentials.yml.enc (base / development)
+secret_key_base: <auto-generated by rails new>
+
+anthropic:
+  api_key: <dev key — use a separate Anthropic project or the same key with low limits>
+
+gcs:
+  project_id: "pyrch-dev"           # or reuse the prod GCP project with a separate bucket
+  bucket: "pyrch-development"       # separate bucket from production — NEVER share buckets across environments
+  json_key_data:
+    type: "service_account"
+    # ... full service account JSON structure (see GCS Lessons Learned section)
+
+mailgun:
+  smtp_login: "postmaster@mg.pyrch.ai"
+  smtp_password: <mailgun SMTP password>
+
+# action_mailbox uses relay ingress in development — no signing key needed locally
+# stripe uses test mode keys in development
+stripe:
+  secret_key: "sk_test_..."
+  publishable_key: "pk_test_..."
+  price_id: "price_test_..."         # test mode price ID from Stripe Dashboard
+  webhook_secret: "whsec_..."        # printed by `stripe listen` CLI — changes each session
+```
+
+Local env file for the master key (never committed):
+```
+config/master.key   ← gitignored; decrypts config/credentials.yml.enc
+```
+
+#### Staging Secrets
+
+Stored in `config/credentials/staging.yml.enc` (encrypted with `RAILS_MASTER_KEY` set as a Render env var on the staging service).
+
+```yaml
+# config/credentials/staging.yml.enc
+secret_key_base: <generate with `rails secret`>
+
+anthropic:
+  api_key: <same key as production OR a separate key with usage limits>
+
+gcs:
+  project_id: "pyrch-production"    # can share GCP project
+  bucket: "pyrch-staging"           # SEPARATE bucket from production
+  json_key_data:
+    # ... same structure as development
+
+mailgun:
+  smtp_login: "postmaster@mg.pyrch.ai"
+  smtp_password: <mailgun SMTP password>
+  mailgun_signing_key: <HTTP webhook signing key for staging — same or separate Mailgun route>
+
+action_mailbox:
+  ingress_password: <SecureRandom.hex for staging ActionMailbox ingress auth>
+
+stripe:
+  secret_key: "sk_test_..."         # test mode — staging never uses live Stripe keys
+  publishable_key: "pk_test_..."
+  price_id: "price_test_..."
+  webhook_secret: "whsec_..."       # from Stripe Dashboard → staging webhook endpoint registration
+
+sentry:
+  dsn: "https://...@sentry.io/..."  # Sentry project DSN — from Sentry → Settings → Projects → Client Keys
+```
+
+Render environment variables for the staging web service:
+```
+RAILS_MASTER_KEY=<key that decrypts staging.yml.enc>
+RAILS_ENV=production                # Render runs Rails in production mode; staging uses staging credentials
+DATABASE_URL=<auto-set by Render PostgreSQL addon>
+GOOD_JOB_EXECUTION_MODE=external   # tells GoodJob not to run jobs in the web process
+```
+
+**Note on `RAILS_ENV`:** Render services always run `RAILS_ENV=production`. Staging vs production is differentiated by which credentials file is loaded (controlled by `RAILS_MASTER_KEY`). This is the same pattern ChoreQuest uses.
+
+#### Production Secrets
+
+Stored in `config/credentials/production.yml.enc` (encrypted with `RAILS_MASTER_KEY` set as a Render env var on the production service). Only `config/credentials/production.yml.enc` is committed to git — never the key.
+
+```yaml
+# config/credentials/production.yml.enc
+secret_key_base: <generate with `rails secret`>
+
+anthropic:
+  api_key: <live Anthropic API key>
+
+gcs:
+  project_id: "pyrch-production"
+  bucket: "pyrch-production"        # production bucket — never shared with staging
+  json_key_data:
+    # ... full service account JSON
+
+mailgun:
+  smtp_login: "postmaster@mg.pyrch.ai"
+  smtp_password: <mailgun SMTP password>
+  mailgun_signing_key: <HTTP webhook signing key from Mailgun → Sending → Webhooks>
+
+action_mailbox:
+  ingress_password: <SecureRandom.hex — different value than staging>
+
+stripe:
+  secret_key: "sk_live_..."         # LIVE key — never commit; never log
+  publishable_key: "pk_live_..."
+  price_id: "price_live_..."        # live mode price ID
+  webhook_secret: "whsec_..."       # from Stripe Dashboard → Developers → Webhooks (production endpoint)
+
+sentry:
+  dsn: "https://...@sentry.io/..."  # Sentry project DSN — same project as staging is fine; environments are tagged separately
+```
+
+Render environment variables for the production web service:
+```
+RAILS_MASTER_KEY=<key that decrypts production.yml.enc>
+RAILS_ENV=production
+DATABASE_URL=<auto-set by Render PostgreSQL addon>
+GOOD_JOB_EXECUTION_MODE=external
+```
+
+**Render environment variables for the production worker service** (same secrets, since it connects to the same database and calls the same external APIs):
+```
+RAILS_MASTER_KEY=<same production master key>
+RAILS_ENV=production
+DATABASE_URL=<same PostgreSQL URL>
+```
+
+---
+
+### Credentials File Map
+
+| File | Committed to git | Decrypted by | Used in |
+|---|---|---|---|
+| `config/credentials.yml.enc` | Yes (base file — dev/test) | `config/master.key` (local only) | Development, test |
+| `config/credentials/staging.yml.enc` | Yes | `RAILS_MASTER_KEY` on Render staging | Staging |
+| `config/credentials/production.yml.enc` | Yes | `RAILS_MASTER_KEY` on Render production | Production |
+| `config/master.key` | **NO** | N/A | Local decryption of base credentials |
+| `config/credentials/staging.key` | **NO** | N/A | Optional local staging credentials edit |
+| `config/credentials/production.key` | **NO** | N/A | Optional local production credentials edit |
+
+**Never commit any `.key` file.** Verify `.gitignore` covers all three key files before the first commit.
+
+Edit production credentials from WSL:
+```bash
+VISUAL=nano RAILS_MASTER_KEY=<value_from_render> rails credentials:edit --environment production
+# After editing: git add config/credentials/production.yml.enc && git commit
+```
+
+---
+
+### Google Cloud Storage — Per-Environment Buckets
+
+Three separate GCS buckets, same GCP project:
+
+| Environment | Bucket Name | Access |
+|---|---|---|
+| Development | `pyrch-development` | Developer's local service account key |
+| Staging | `pyrch-staging` | Staging service account (can be same SA as production with separate bucket permissions) |
+| Production | `pyrch-production` | Production service account — Storage Object Admin role scoped to this bucket only |
+
+**Never point staging at the production bucket.** A broken staging job that deletes or corrupts GCS objects would affect production photos.
+
+`storage.yml` uses environment-conditional config to select the right bucket:
+```yaml
+# Keep a single 'google' stanza; credentials.yml.enc per environment stores the correct bucket name.
+google:
+  service: GCS
+  project: <%= Rails.application.credentials.dig(:gcs, :project_id) %>
+  credentials: <%= Rails.application.credentials.dig(:gcs, :json_key_data).to_json %>
+  bucket: <%= Rails.application.credentials.dig(:gcs, :bucket) %>
+```
+
+Local development uses the `local` disk service (no GCS needed for most development work):
+```ruby
+# config/environments/development.rb
+config.active_storage.service = :local
+```
+
+---
+
+### Mailgun Configuration
+
+One Mailgun account, one custom domain (`mg.pyrch.ai`). Inbound routing differentiates environments:
+
+- **Production inbound:** `school@mg.pyrch.ai` or per-household routing → `POST https://pyrch.ai/rails/action_mailbox/mailgun/inbound_emails/mime`
+- **Staging inbound:** Use a separate Mailgun route matching a staging-specific address → `POST https://pyrch-staging.onrender.com/rails/action_mailbox/mailgun/inbound_emails/mime`
+- **Development inbound:** `config.action_mailbox.ingress = :relay` — use `rails action_mailbox:ingress:postfix` or `mailman` for local testing
+
+ActionMailbox verifies Mailgun signatures automatically when `ingress = :mailgun`. The `mailgun_signing_key` in credentials enables this. Use different signing keys for staging and production if using separate Mailgun routes, or the same key if both routes share one webhook config.
+
+Outbound email (Devise, notifications) goes through Mailgun SMTP on all environments. Staging should send to safe test addresses only — configure `config.action_mailer.default_url_options` per environment:
+```ruby
+# production.rb
+config.action_mailer.default_url_options = { host: "pyrch.ai", protocol: "https" }
+
+# staging: add a staging.rb or set in staging credentials
+config.action_mailer.default_url_options = { host: "pyrch-staging.onrender.com", protocol: "https" }
+```
+
+---
+
+### Stripe Configuration
+
+Two separate Stripe mode configurations:
+
+| Environment | Stripe Mode | Keys |
+|---|---|---|
+| Development | Test mode | `sk_test_` / `pk_test_` from Stripe Dashboard |
+| Staging | Test mode | Same test keys as development (or a separate test mode account) |
+| Production | Live mode | `sk_live_` / `pk_live_` — set in production credentials ONLY |
+
+**Webhook setup required per environment:**
+- **Production:** Register `https://pyrch.ai/billing/webhook` in Stripe Dashboard → Developers → Webhooks; copy the generated `whsec_` secret into production credentials
+- **Staging:** Register `https://pyrch-staging.onrender.com/billing/webhook` in Stripe Dashboard → Developers → Webhooks (test mode); copy into staging credentials
+- **Development:** Run `stripe listen --forward-to localhost:3000/billing/webhook` in a terminal; the CLI prints a temporary `whsec_` secret — set it in base credentials (it changes each listener session; keep a stable placeholder in credentials and override with ENV var during dev if needed)
+
+Local development requires three terminals: Rails server, `stripe listen`, command line.
+
+---
+
+### Anthropic API
+
+One Anthropic API key per billing account. For Pyrch:
+
+- All three environments can share the same key — usage is billed per token, not per environment
+- Consider using Anthropic's project feature to create separate projects for staging vs production if you want independent rate limit monitoring or cost tracking
+- Store the key in each environment's credentials file (dev in base credentials, staging/production in their respective encrypted files)
+- Never log API keys; never return them in responses; never put them in Rails logs via `config.log_level = :debug` in staging without confirming Anthropic's key doesn't appear in request logs
+
+---
+
+### Environment Variables Quick Reference
+
+Variables set directly on Render (not in credentials files):
+
+| Variable | Web | Worker | Notes |
+|---|---|---|---|
+| `RAILS_MASTER_KEY` | Yes | Yes | Decrypts the environment's credentials file |
+| `RAILS_ENV` | Yes | Yes | Always `production` on Render |
+| `DATABASE_URL` | Auto | Auto | Set automatically by Render PostgreSQL addon |
+| `GOOD_JOB_EXECUTION_MODE` | `external` | `async` | Web should NOT process jobs; worker processes all |
+| `PORT` | Auto | N/A | Render sets this; Puma reads it |
+| `WEB_CONCURRENCY` | Optional | N/A | Puma worker count; start with 2 |
+| `RAILS_MAX_THREADS` | Optional | N/A | Default 5; set to 5 for Puma + GoodJob thread pool |
+
+Everything else (API keys, database credentials for external services, SMTP passwords) belongs in Rails encrypted credentials, not Render env vars — this way secrets are version-controlled alongside the code that uses them and can be rotated by editing the credentials file rather than updating Render's dashboard.
+
+---
+
+### Deployment Runbook
+
+#### First-time production setup (in order):
+
+1. Create GCP project + three GCS buckets (`pyrch-development`, `pyrch-staging`, `pyrch-production`)
+2. Create GCS service accounts and download JSON keys
+3. Register Mailgun custom domain `mg.pyrch.ai`; add DNS records on GoDaddy (SPF, DKIM, CNAME, 2x MX)
+4. Register Stripe webhooks for production and staging endpoints
+5. Create Rails credentials for each environment:
+   - `rails credentials:edit` (base/dev)
+   - `rails credentials:edit --environment staging`
+   - `rails credentials:edit --environment production`
+6. Create Render PostgreSQL databases (production: Starter; staging: free)
+7. Create Render web services (production + staging); add env vars; set build and start commands:
+   - Build: `bundle install && bundle exec rails assets:precompile && bundle exec rails db:migrate`
+   - Start: `bundle exec rails server -b 0.0.0.0 -p $PORT`
+8. Create Render background worker services (production + staging):
+   - Start: `bundle exec good_job start`
+   - Same env vars as web service
+9. Push `staging` branch → confirm staging deploys and loads
+10. Merge `staging` → `main` → confirm production deploys and loads
+
+#### Routine deploy (feature → staging → production):
+
+```bash
+# 1. Development: work on feature branch
+git checkout -b feature/my-feature
+# ... make changes, test locally ...
+git push origin feature/my-feature
+
+# 2. Open PR targeting staging branch; merge when approved
+# Render auto-deploys staging on merge
+
+# 3. QA on staging (https://pyrch-staging.onrender.com)
+# If migration is needed: Render staging → Shell → bundle exec rails db:migrate
+
+# 4. Merge staging → main (fast-forward only, no merge commit)
+git checkout main
+git merge --ff-only staging
+git push origin main
+# Render auto-deploys production
+
+# 5. Check Render production → Logs for errors
+# If migration is needed: Render production → Shell → bundle exec rails db:migrate
+```
+
+#### Rollback:
+
+Render Dashboard → your service → Deploys → click any previous successful deploy → "Redeploy". This does NOT roll back the database — if the previous code is incompatible with the current schema, you must also run a down migration manually in the Render shell.
+
+---
+
+### Files That Must Never Be Committed
+
+```
+config/master.key
+config/credentials.yml.enc          ← base credentials (contains dev secrets)
+config/credentials/staging.key
+config/credentials/production.key
+.env
+.env.*
+log/*
+tmp/*
+```
+
+Verify `.gitignore` covers all of these before creating the Pyrch repo. The `config/credentials.yml.enc` rule is different from ChoreQuest: ChoreQuest accidentally tracked this file and had to `git rm --cached` it mid-project (see commit `4eb9374`). Start Pyrch with it gitignored.
+
+Only these credential files should be in git:
+```
+config/credentials/staging.yml.enc
+config/credentials/production.yml.enc
+```
+
+---
+
+*Last updated: 2026-03-06. Synthesized from rails-architect, project-manager, pyrch-planner, and primary-developer agent reports. Rue lessons added after ChoreQuest implementation and debugging session. School Communications Hub POC validated on ChoreQuest; Phase 8 POC scope marked complete with learnings captured. GCS + Active Storage lessons added after ChoreQuest production file storage setup.*

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_05_020000) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_06_212621) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -200,11 +200,33 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_05_020000) do
     t.boolean "accept_terms", default: false, null: false
     t.datetime "archived_at"
     t.text "rue_history"
+    t.string "plan_tier", default: "free", null: false
+    t.string "stripe_customer_id"
+    t.string "stripe_subscription_id"
+    t.string "subscription_status"
+    t.datetime "trial_ends_at"
     t.index ["archived_at"], name: "index_parents_on_archived_at"
     t.index ["confirmation_token"], name: "index_parents_on_confirmation_token", unique: true
     t.index ["email"], name: "index_parents_on_email", unique: true
     t.index ["reset_password_token"], name: "index_parents_on_reset_password_token", unique: true
+    t.index ["stripe_customer_id"], name: "index_parents_on_stripe_customer_id", unique: true
+    t.index ["stripe_subscription_id"], name: "index_parents_on_stripe_subscription_id", unique: true
     t.index ["unlock_token"], name: "index_parents_on_unlock_token", unique: true
+  end
+
+  create_table "push_subscriptions", force: :cascade do |t|
+    t.bigint "parent_id"
+    t.bigint "child_id"
+    t.string "endpoint", null: false
+    t.string "p256dh", null: false
+    t.string "auth", null: false
+    t.string "platform", default: "web", null: false
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["child_id"], name: "index_push_subscriptions_on_child_id"
+    t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
+    t.index ["parent_id"], name: "index_push_subscriptions_on_parent_id"
   end
 
   create_table "school_messages", force: :cascade do |t|
@@ -247,6 +269,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_05_020000) do
   add_foreign_key "game_scores", "games"
   add_foreign_key "game_sessions", "children"
   add_foreign_key "game_sessions", "games"
+  add_foreign_key "push_subscriptions", "children"
+  add_foreign_key "push_subscriptions", "parents"
   add_foreign_key "school_messages", "parents"
   add_foreign_key "token_transactions", "children"
 end

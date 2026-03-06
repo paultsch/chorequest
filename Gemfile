@@ -65,6 +65,9 @@ gem "anthropic"
 # Stripe payments
 gem "stripe", "~> 13.0"
 
+# Web Push notifications (VAPID)
+gem "webpush"
+
 # Google Cloud Storage for Active Storage
 gem "google-cloud-storage", "~> 1.50", require: false
 
