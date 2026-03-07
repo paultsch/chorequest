@@ -27,7 +27,14 @@ class AnalyzeChorePhotoJob < ApplicationJob
   private
 
   def analyze_photo(attempt, chore)
-    base64_image = Base64.strict_encode64(attempt.photo.download)
+    image_data = attempt.photo.download
+    resized = ImageProcessing::MiniMagick
+      .source(StringIO.new(image_data))
+      .resize_to_limit(1568, 1568)
+      .convert("jpeg")
+      .call
+    base64_image = Base64.strict_encode64(File.binread(resized.path))
+    resized.close!
 
     prompt = <<~PROMPT
       You are evaluating whether a child has completed a household chore.

@@ -439,6 +439,7 @@ DEPENDENCIES
   importmap-rails
   jbuilder
   kaminari
+  mini_magick
   minitest (~> 5.25)
   pg (~> 1.1)
   puma (>= 5.0)
