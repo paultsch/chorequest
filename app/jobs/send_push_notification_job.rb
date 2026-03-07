@@ -36,6 +36,7 @@ class SendPushNotificationJob < ApplicationJob
     Rails.logger.info "[PushNotification] Removing stale subscription #{subscription.id}: #{e.message}"
     subscription.destroy
   rescue => e
+    Sentry.capture_exception(e, extra: { subscription_id: subscription.id })
     Rails.logger.error "[PushNotification] Failed to send to subscription #{subscription.id}: #{e.message}"
     # Do not re-raise — keep the queue healthy
   end

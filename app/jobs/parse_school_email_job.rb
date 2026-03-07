@@ -32,6 +32,7 @@ class ParseSchoolEmailJob < ApplicationJob
       parse_status:    "parsed"
     )
   rescue => e
+    Sentry.capture_exception(e, extra: { school_message_id: school_message_id })
     message&.update!(parse_status: "failed")
     Rails.logger.error("ParseSchoolEmailJob failed for #{school_message_id}: #{e.message}")
   end

@@ -71,6 +71,10 @@ gem "webpush"
 # Google Cloud Storage for Active Storage
 gem "google-cloud-storage", "~> 1.50", require: false
 
+# Error monitoring
+gem "sentry-ruby"
+gem "sentry-rails"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ]

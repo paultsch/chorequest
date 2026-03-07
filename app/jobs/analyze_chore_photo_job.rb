@@ -19,6 +19,7 @@ class AnalyzeChorePhotoJob < ApplicationJob
     verdict, message = analyze_photo(attempt, chore)
     apply_verdict(attempt, assignment, chore, verdict, message)
   rescue => e
+    Sentry.capture_exception(e, extra: { chore_attempt_id: chore_attempt_id })
     Rails.logger.error "AnalyzeChorePhotoJob failed for attempt #{chore_attempt_id}: #{e.message}"
     attempt&.update_columns(ai_verdict: 'NEEDS_REVIEW', ai_analyzed_at: Time.current)
   end
