@@ -65,6 +65,19 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
+  <!-- ===== MASCOT SWITCHER (design review tool) ===== -->
+  <div id="mascot-bar" style="background:#1a1a2e;padding:8px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;z-index:100;position:relative">
+    <span style="color:#9ca3af;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap">Mascot preview:</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button onclick="setMascot('A')" id="mb-A" style="font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:50px;border:1px solid #4b5563;color:#9ca3af;background:transparent;cursor:pointer">A: Friendly</button>
+      <button onclick="setMascot('B')" id="mb-B" style="font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:50px;border:1px solid #4b5563;color:#9ca3af;background:transparent;cursor:pointer">B: Wise</button>
+      <button onclick="setMascot('C')" id="mb-C" style="font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:50px;border:1px solid #4b5563;color:#9ca3af;background:transparent;cursor:pointer">C: Icon</button>
+      <button onclick="setMascot('D')" id="mb-D" style="font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:50px;border:1.5px solid #10B981;color:#10B981;background:transparent;cursor:pointer">D: Warm &#9733;</button>
+    </div>
+    <a href="/pocs/poc-rue-concepts.html" style="margin-left:auto;color:#6366f1;font-size:0.7rem;font-weight:600;white-space:nowrap;text-decoration:none">Full mascot review &rarr;</a>
+  </div>
+
+
   <!-- Nav backdrop -->
   <div id="nav-backdrop" class="fixed inset-0 bg-black/40 z-40" onclick="closeNav()"></div>
 
@@ -73,22 +86,7 @@
 
     <div class="flex items-center justify-between px-5 pt-6 pb-4 border-b border-gray-100">
       <div class="flex items-center gap-2.5">
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="10" fill="#1E3A8A"/>
-  <ellipse cx="16" cy="20" rx="6.5" ry="7" fill="#EEF2FF"/>
-  <ellipse cx="16" cy="12.5" rx="6" ry="5.5" fill="#EEF2FF"/>
-  <circle cx="13.5" cy="11.5" r="2.5" fill="#F59E0B"/>
-  <circle cx="18.5" cy="11.5" r="2.5" fill="#F59E0B"/>
-  <circle cx="13.5" cy="11.5" r="1.1" fill="#1E3A8A"/>
-  <circle cx="18.5" cy="11.5" r="1.1" fill="#1E3A8A"/>
-  <circle cx="14" cy="11" r="0.4" fill="white"/>
-  <circle cx="19" cy="11" r="0.4" fill="white"/>
-  <path d="M15 13.5 L16 15.2 L17 13.5 Z" fill="#F59E0B"/>
-  <path d="M11.5 7.5 L13 10.5 L10 10.5 Z" fill="#3B5BDB"/>
-  <path d="M20.5 7.5 L23 10.5 L20 10.5 Z" fill="#3B5BDB"/>
-  <path d="M9.5 20.5 Q7.5 23 9.5 26 Q12.5 24 11.5 20.5 Z" fill="#C7D2FE"/>
-  <path d="M22.5 20.5 Q24.5 23 22.5 26 Q19.5 24 20.5 20.5 Z" fill="#C7D2FE"/>
-</svg>
+        <span class="rue-owl-logo" style="display:inline-flex;width:32px;height:32px;flex-shrink:0"></span>
         <div>
           <p class="font-bold text-gray-900 leading-tight">Pyrch</p>
           <p class="text-gray-400 text-xs leading-tight">Jane's Household</p>
@@ -353,18 +351,8 @@
     <!-- Ask Rue FAB -->
     <div class="rue-fab" onclick="openRue()">
       <div class="rue-fab-circle">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-  <ellipse cx="14" cy="18" rx="5.5" ry="6" fill="rgba(255,255,255,0.85)"/>
-  <ellipse cx="14" cy="10.5" rx="5" ry="4.5" fill="rgba(255,255,255,0.85)"/>
-  <circle cx="11.5" cy="9.5" r="2.2" fill="#F59E0B"/>
-  <circle cx="16.5" cy="9.5" r="2.2" fill="#F59E0B"/>
-  <circle cx="11.5" cy="9.5" r="1" fill="#1E3A8A"/>
-  <circle cx="16.5" cy="9.5" r="1" fill="#1E3A8A"/>
-  <circle cx="12" cy="9" r="0.35" fill="white"/>
-  <circle cx="17" cy="9" r="0.35" fill="white"/>
-  <path d="M13 11.5 L14 13.2 L15 11.5 Z" fill="#F59E0B"/>
-</svg>
-      </div>
+              <span class="rue-owl-small" style="display:inline-flex;width:28px;height:28px"></span>
+              </div>
       <span class="rue-fab-label">Ask Rue</span>
     </div>
     <a href="#" class="bnav-item">
@@ -385,124 +373,8 @@
 
     <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 shrink-0">
       <div class="relative">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" class="shrink-0">
-  <circle cx="22" cy="22" r="22" fill="#EEF2FF"/>
-  <ellipse cx="22" cy="29" rx="8" ry="8.5" fill="#C7D2FE"/>
-  <ellipse cx="22" cy="17.5" rx="7.5" ry="7" fill="#C7D2FE"/>
-  <circle cx="18.5" cy="15.5" r="3.2" fill="#F59E0B"/>
-  <circle cx="25.5" cy="15.5" r="3.2" fill="#F59E0B"/>
-  <circle cx="18.5" cy="15.5" r="1.5" fill="#1E3A8A"/>
-  <circle cx="25.5" cy="15.5" r="1.5" fill="#1E3A8A"/>
-  <circle cx="19.2" cy="14.8" r="0.55" fill="white"/>
-  <circle cx="26.2" cy="14.8" r="0.55" fill="white"/>
-  <path d="M20.5 18.5 L22 20.5 L23.5 18.5 Z" fill="#F59E0B"/>
-  <path d="M15 10 L18 14.5 L13.5 14.5 Z" fill="#4F46E5"/>
-  <path d="M29 10 L32 14.5 L27 14.5 Z" fill="#4F46E5"/>
-</svg>
-        <div class="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white"></div>
-      </div>
-      <div>
-        <p class="font-bold text-gray-900">Rue</p>
-        <p class="text-xs text-gray-400">Your household AI &middot; <span class="text-green-500 font-semibold">Online</span></p>
-      </div>
-      <button onclick="closeRue()" class="ml-auto w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
-    </div>
-
-    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-      <div class="flex items-start gap-2.5">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
-  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
-  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
-  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
-  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
-  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
-  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
-  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
-  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
-  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
-  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
-</svg>
-        <div class="bubble-rue p-3 max-w-xs text-sm leading-relaxed">Hi Jane! I keep an eye on your household so you don&rsquo;t have to. Ask me anything &mdash; or let me tell you what needs attention.</div>
-      </div>
-      <div class="flex items-start gap-2.5">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
-  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
-  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
-  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
-  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
-  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
-  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
-  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
-  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
-  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
-  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
-</svg>
-        <div class="space-y-2 max-w-xs">
-          <div class="bubble-rue p-3 text-sm leading-relaxed">Here&rsquo;s what I noticed this morning:</div>
-          <div class="tool-chip space-y-1">
-            <p>&#128308; Lawn &mdash; overdue by 4 days</p>
-            <p>&#128993; Dishes &mdash; due today</p>
-            <p>&#128994; Trash &mdash; OK</p>
-          </div>
-          <div class="bubble-rue p-3 text-sm leading-relaxed">Want me to assign these to the kids for this weekend?</div>
+        <div class="rue-owl-large" style="width:44px;height:44px"></div>
         </div>
-      </div>
-      <div class="flex justify-end">
-        <div class="bubble-user p-3 max-w-xs text-sm">Yes &mdash; lawn to Liam, dishes to Emma, Saturday</div>
-      </div>
-      <div class="flex items-start gap-2.5">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
-  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
-  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
-  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
-  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
-  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
-  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
-  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
-  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
-  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
-  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
-</svg>
-        <div class="space-y-2 max-w-xs">
-          <div class="tool-chip space-y-1">
-            <p class="text-green-600">&#10003; Liam &rarr; Mow Lawn &rarr; Saturday</p>
-            <p class="text-green-600">&#10003; Emma &rarr; Dishes &rarr; Saturday</p>
-          </div>
-          <div class="bubble-rue p-3 text-sm leading-relaxed">Done! Both are scheduled. They&rsquo;ll see them in the app. Anything else I can help with?</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="px-4 py-3 border-t border-gray-100 shrink-0">
-      <div class="flex gap-2">
-        <input type="text" placeholder="Ask Rue anything&hellip;" class="flex-1 bg-gray-50 text-sm rounded-2xl px-4 py-3 border border-gray-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"/>
-        <button class="w-11 h-11 bg-[#1E3A8A] rounded-2xl flex items-center justify-center hover:bg-blue-800 transition shrink-0">
-          <svg class="w-4 h-4 text-white rotate-90" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-        </button>
-      </div>
-      <div class="flex gap-2 mt-2.5 overflow-x-auto pb-1" style="scrollbar-width:none">
-        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">What&rsquo;s overdue?</button>
-        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">Plan this week</button>
-        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">Approve all</button>
-        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">Who&rsquo;s done?</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ===== MODULES BACKDROP + PANEL ===== -->
-  <div id="mod-backdrop" class="fixed inset-0 bg-black/40 z-40" onclick="closeModules()"></div>
-  <div id="modules-panel" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl">
-    <div class="flex justify-center pt-3 pb-1"><div class="w-10 h-1 bg-gray-200 rounded-full"></div></div>
-    <div class="px-5 py-4 border-b border-gray-100">
-      <h2 class="font-bold text-gray-900 text-lg">Modules</h2>
-      <p class="text-gray-400 text-sm">Everything your household needs</p>
-    </div>
-    <div class="px-4 py-4 grid grid-cols-2 gap-3 overflow-y-auto" style="max-height:55vh">
-      <div class="bg-purple-50 rounded-2xl p-4 border border-purple-100 cursor-pointer active:scale-95 transition">
-        <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mb-3"><svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
         <p class="font-semibold text-gray-900 text-sm">Chore Management</p>
         <p class="text-xs text-gray-400 mt-0.5">Assign, track, approve</p>
       </div>
@@ -558,5 +430,188 @@
       });
     });
   </script>
+
+  <script>
+    var OWLS = {
+      A: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Body (compact, sits below head) -->
+  <ellipse cx="50" cy="78" rx="20" ry="17" fill="#C7D2FE"/>
+  <!-- Wing left -->
+  <ellipse cx="32" cy="80" rx="10" ry="7" fill="#A5B4FC" transform="rotate(-20 32 80)"/>
+  <!-- Wing right -->
+  <ellipse cx="68" cy="80" rx="10" ry="7" fill="#A5B4FC" transform="rotate(20 68 80)"/>
+  <!-- Head — large round circle -->
+  <circle cx="50" cy="40" r="32" fill="#E8E4D9"/>
+  <!-- Ear tuft left -->
+  <ellipse cx="25" cy="16" rx="6" ry="10" fill="#4F46E5" transform="rotate(-20 25 16)"/>
+  <!-- Ear tuft right -->
+  <ellipse cx="75" cy="16" rx="6" ry="10" fill="#4F46E5" transform="rotate(20 75 16)"/>
+  <!-- Facial disc (slightly lighter oval) -->
+  <ellipse cx="50" cy="42" rx="24" ry="22" fill="#F5F0E8"/>
+  <!-- Eye sockets (dark ring for depth) -->
+  <circle cx="36" cy="38" r="13" fill="#2D2D2D"/>
+  <circle cx="64" cy="38" r="13" fill="#2D2D2D"/>
+  <!-- Iris — amber -->
+  <circle cx="36" cy="38" r="11" fill="#F59E0B"/>
+  <circle cx="64" cy="38" r="11" fill="#F59E0B"/>
+  <!-- Pupil -->
+  <circle cx="36" cy="37" r="6" fill="#1A1A2E"/>
+  <circle cx="64" cy="37" r="6" fill="#1A1A2E"/>
+  <!-- Eye shine (gives life) -->
+  <circle cx="39" cy="33" r="2.5" fill="white"/>
+  <circle cx="67" cy="33" r="2.5" fill="white"/>
+  <!-- Small shine dot -->
+  <circle cx="33" cy="40" r="1" fill="white" opacity="0.6"/>
+  <circle cx="61" cy="40" r="1" fill="white" opacity="0.6"/>
+  <!-- Beak -->
+  <path d="M46 47 L50 53 L54 47 Z" fill="#F59E0B"/>
+  <!-- Feather detail on head -->
+  <path d="M50 10 Q45 18 50 22 Q55 18 50 10Z" fill="#D4C5F9" opacity="0.5"/>
+  <!-- Feet -->
+  <path d="M40 93 L36 99 M40 93 L42 99 M40 93 L44 99" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M60 93 L56 99 M60 93 L62 99 M60 93 L64 99" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+</svg>`,
+      B: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Body -->
+  <ellipse cx="50" cy="79" rx="19" ry="16" fill="#C7D2FE"/>
+  <!-- Wings -->
+  <path d="M31 74 Q18 82 22 90 Q32 85 35 75 Z" fill="#A5B4FC"/>
+  <path d="M69 74 Q82 82 78 90 Q68 85 65 75 Z" fill="#A5B4FC"/>
+  <!-- Head — slightly more oval, confident -->
+  <ellipse cx="50" cy="40" rx="30" ry="33" fill="#E8E4D9"/>
+  <!-- Ear tufts — more prominent, swept back -->
+  <path d="M22 18 L28 8 L34 20 Z" fill="#3730A3"/>
+  <path d="M78 18 L72 8 L66 20 Z" fill="#3730A3"/>
+  <!-- Forehead feathers -->
+  <path d="M50 9 Q44 15 46 20 Q50 16 54 20 Q56 15 50 9Z" fill="#D4C5F9" opacity="0.6"/>
+  <!-- Facial disc -->
+  <ellipse cx="50" cy="43" rx="23" ry="21" fill="#F5F0E8"/>
+  <!-- BROW RIDGES — the "wise" feature -->
+  <path d="M24 29 Q36 24 44 28" stroke="#8B7355" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M76 29 Q64 24 56 28" stroke="#8B7355" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Eye sockets -->
+  <circle cx="37" cy="38" r="12.5" fill="#2D2D2D"/>
+  <circle cx="63" cy="38" r="12.5" fill="#2D2D2D"/>
+  <!-- Iris -->
+  <circle cx="37" cy="38" r="10.5" fill="#F59E0B"/>
+  <circle cx="63" cy="38" r="10.5" fill="#F59E0B"/>
+  <!-- Pupil — looking slightly forward/alert -->
+  <circle cx="38" cy="37" r="5.5" fill="#1A1A2E"/>
+  <circle cx="64" cy="37" r="5.5" fill="#1A1A2E"/>
+  <!-- Shine -->
+  <circle cx="40" cy="33" r="2.5" fill="white"/>
+  <circle cx="66" cy="33" r="2.5" fill="white"/>
+  <circle cx="35" cy="40" r="1" fill="white" opacity="0.5"/>
+  <circle cx="61" cy="40" r="1" fill="white" opacity="0.5"/>
+  <!-- Beak — slightly hooked, more owl-accurate -->
+  <path d="M45 48 Q50 58 55 48 Q52 44 50 46 Q48 44 45 48Z" fill="#E88C2A"/>
+  <!-- Feet -->
+  <path d="M40 93 L36 99 M40 93 L42 99 M40 93 L44 99" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M60 93 L56 99 M60 93 L62 99 M60 93 L64 99" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+</svg>`,
+      C: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Navy circle bg — this IS the icon -->
+  <circle cx="50" cy="50" r="50" fill="#1E3A8A"/>
+  <!-- Subtle body shape inside -->
+  <ellipse cx="50" cy="65" rx="22" ry="20" fill="#2D4FA3" opacity="0.6"/>
+  <!-- Head circle — cream -->
+  <circle cx="50" cy="42" r="30" fill="#F5F0E8"/>
+  <!-- Ear tufts — sharp, graphic -->
+  <path d="M24 20 L30 8 L36 22 Z" fill="#F5F0E8"/>
+  <path d="M76 20 L70 8 L64 22 Z" fill="#F5F0E8"/>
+  <!-- Eye rings — bold, graphic -->
+  <circle cx="36" cy="40" r="14" fill="#1E3A8A"/>
+  <circle cx="64" cy="40" r="14" fill="#1E3A8A"/>
+  <!-- Eyes — large amber, dominant -->
+  <circle cx="36" cy="40" r="11" fill="#F59E0B"/>
+  <circle cx="64" cy="40" r="11" fill="#F59E0B"/>
+  <!-- Pupils — large for drama -->
+  <circle cx="36" cy="39" r="6.5" fill="#0F172A"/>
+  <circle cx="64" cy="39" r="6.5" fill="#0F172A"/>
+  <!-- Shine — bold single dot -->
+  <circle cx="39.5" cy="35" r="3" fill="white"/>
+  <circle cx="67.5" cy="35" r="3" fill="white"/>
+  <!-- Beak — minimal triangle -->
+  <path d="M47 50 L50 56 L53 50 Z" fill="#F59E0B"/>
+</svg>`,
+      D: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Body with feather layering -->
+  <ellipse cx="50" cy="79" rx="21" ry="17" fill="#DDD6FE"/>
+  <!-- Belly — lighter, warmer -->
+  <ellipse cx="50" cy="80" rx="14" ry="14" fill="#F5F0E8"/>
+  <!-- Wings — more detailed -->
+  <path d="M29 71 Q14 76 16 88 Q28 86 34 73 Z" fill="#C4B5FD"/>
+  <path d="M71 71 Q86 76 84 88 Q72 86 66 73 Z" fill="#C4B5FD"/>
+  <!-- Wing feather lines -->
+  <path d="M19 82 Q25 80 30 76" stroke="#A78BFA" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <path d="M81 82 Q75 80 70 76" stroke="#A78BFA" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <!-- Head — rounder, warmer -->
+  <circle cx="50" cy="40" r="31" fill="#E8E4D9"/>
+  <!-- Head feather texture -->
+  <path d="M50 10 Q43 17 46 22 Q50 18 54 22 Q57 17 50 10Z" fill="#C4B5FD" opacity="0.7"/>
+  <path d="M36 13 Q30 20 34 24" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <path d="M64 13 Q70 20 66 24" stroke="#C4B5FD" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <!-- Ear tufts — rounder, friendly -->
+  <ellipse cx="26" cy="16" rx="7" ry="11" fill="#7C3AED" transform="rotate(-15 26 16)"/>
+  <ellipse cx="74" cy="16" rx="7" ry="11" fill="#7C3AED" transform="rotate(15 74 16)"/>
+  <!-- Facial disc — warm heart-ish shape -->
+  <ellipse cx="50" cy="43" rx="25" ry="22" fill="#FFF8F0"/>
+  <!-- Cheek blush — the warmth detail -->
+  <circle cx="28" cy="46" r="7" fill="#FCA5A5" opacity="0.35"/>
+  <circle cx="72" cy="46" r="7" fill="#FCA5A5" opacity="0.35"/>
+  <!-- Eye sockets -->
+  <circle cx="36" cy="38" r="13" fill="#2D2D2D"/>
+  <circle cx="64" cy="38" r="13" fill="#2D2D2D"/>
+  <!-- Iris — rich amber -->
+  <circle cx="36" cy="38" r="11" fill="#F59E0B"/>
+  <circle cx="64" cy="38" r="11" fill="#F59E0B"/>
+  <!-- Inner iris ring (depth) -->
+  <circle cx="36" cy="38" r="7.5" fill="#D97706"/>
+  <circle cx="64" cy="38" r="7.5" fill="#D97706"/>
+  <!-- Pupil -->
+  <circle cx="36.5" cy="37" r="5.5" fill="#0F172A"/>
+  <circle cx="64.5" cy="37" r="5.5" fill="#0F172A"/>
+  <!-- Eye shine — two dots for extra life -->
+  <circle cx="39.5" cy="33" r="2.5" fill="white"/>
+  <circle cx="67.5" cy="33" r="2.5" fill="white"/>
+  <circle cx="34" cy="41" r="1.2" fill="white" opacity="0.7"/>
+  <circle cx="62" cy="41" r="1.2" fill="white" opacity="0.7"/>
+  <!-- Beak — rounded, friendly -->
+  <path d="M45 48 Q50 57 55 48 Q52 45 50 47 Q48 45 45 48Z" fill="#F59E0B"/>
+  <!-- Implied smile line -->
+  <path d="M40 54 Q50 59 60 54" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <!-- Feet -->
+  <path d="M40 94 L36 100 M40 94 L42 100 M40 94 L44 100" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M60 94 L56 100 M60 94 L62 100 M60 94 L64 100" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+</svg>`
+    };
+    var SMALLS = {
+      A: `<span class="rue-owl-small" style="display:inline-flex;width:28px;height:28px;flex-shrink:0"></span>`,
+      B: `<span class="rue-owl-small" style="display:inline-flex;width:28px;height:28px;flex-shrink:0"></span>`,
+      C: `<span class="rue-owl-small" style="display:inline-flex;width:28px;height:28px;flex-shrink:0"></span>`,
+      D: `<span class="rue-owl-small" style="display:inline-flex;width:28px;height:28px;flex-shrink:0"></span>`
+    };
+    var LOGOS = {
+      A: `<span class="rue-owl-logo" style="display:inline-flex;width:32px;height:32px;flex-shrink:0"></span>`,
+      B: `<span class="rue-owl-logo" style="display:inline-flex;width:32px;height:32px;flex-shrink:0"></span>`,
+      C: `<span class="rue-owl-logo" style="display:inline-flex;width:32px;height:32px;flex-shrink:0"></span>`,
+      D: `<span class="rue-owl-logo" style="display:inline-flex;width:32px;height:32px;flex-shrink:0"></span>`
+    };
+    var current = 'D';
+    function setMascot(v) {
+      current = v;
+      ['A','B','C','D'].forEach(function(k) {
+        var btn = document.getElementById('mb-' + k);
+        btn.style.borderColor = k === v ? '#10B981' : '#4b5563';
+        btn.style.color = k === v ? '#10B981' : '#9ca3af';
+      });
+      document.querySelectorAll('.rue-owl-large').forEach(function(el) { el.innerHTML = OWLS[v]; });
+      document.querySelectorAll('.rue-owl-small').forEach(function(el) { el.innerHTML = SMALLS[v]; });
+      document.querySelectorAll('.rue-owl-logo').forEach(function(el) { el.innerHTML = LOGOS[v]; });
+    }
+    // init to D
+    document.addEventListener('DOMContentLoaded', function() { setMascot('D'); });
+  </script>
+
 </body>
 </html>
