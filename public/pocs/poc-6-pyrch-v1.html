@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>POC 6 &mdash; Pyrch V1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #F7F6F3; color: #1a1a1a; overscroll-behavior: none; }
+
+    /* Side nav */
+    #sidenav { transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    #sidenav.open { transform: translateX(0); }
+    #nav-backdrop { opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    #nav-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    /* Rue chat */
+    #rue-panel { transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+    #rue-panel.open { transform: translateY(0); }
+    #rue-backdrop { opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    #rue-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    /* Modules */
+    #modules-panel { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    #modules-panel.open { transform: translateY(0); }
+    #mod-backdrop { opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    #mod-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    /* Nav items */
+    .nav-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:12px; font-weight:500; font-size:0.875rem; cursor:pointer; transition:background 0.15s; text-decoration:none; color:#6b7280; margin-bottom:2px; }
+    .nav-item:hover { background:#F3F4F6; color:#1a1a1a; }
+    .nav-item.active { background:#EEF2FF; color:#3730a3; }
+    .nav-section { font-size:0.65rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#9ca3af; padding:10px 14px 4px; }
+
+    /* Member pills */
+    .member-pill { padding:6px 14px; border-radius:50px; font-size:0.8rem; font-weight:600; white-space:nowrap; cursor:pointer; border:none; transition:all 0.15s; }
+    .member-pill.active { background:#1E3A8A; color:white; }
+    .member-pill.inactive { background:#EBEBEB; color:#555; }
+
+    /* Pill scroll */
+    .pill-scroll { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+    .pill-scroll::-webkit-scrollbar { display:none; }
+
+    /* Cards */
+    .card { background:white; border-radius:20px; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
+
+    /* Bottom nav */
+    .bnav { background:white; border-top:1px solid #F0F0F0; box-shadow:0 -4px 16px rgba(0,0,0,0.06); position:fixed; bottom:0; left:0; right:0; display:flex; align-items:flex-end; z-index:30; padding-bottom:env(safe-area-inset-bottom, 0px); }
+    .bnav-item { display:flex; flex-direction:column; align-items:center; gap:3px; flex:1; padding:10px 4px 10px; font-size:0.62rem; font-weight:600; color:#9ca3af; cursor:pointer; text-decoration:none; }
+    .bnav-item.active { color:#1E3A8A; }
+
+    /* Ask Rue FAB */
+    .rue-fab { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; cursor:pointer; padding:0 12px; margin-top:-22px; }
+    .rue-fab-circle { width:58px; height:58px; background:linear-gradient(145deg,#1E3A8A,#3B5BDB); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 18px rgba(30,58,138,0.45); border:3px solid white; transition:transform 0.2s, box-shadow 0.2s; }
+    .rue-fab-circle:active { transform:scale(0.95); }
+    .rue-fab-label { font-size:0.6rem; font-weight:700; color:#1E3A8A; margin-top:3px; letter-spacing:0.02em; }
+
+    /* Chat */
+    .bubble-rue { background:#F0F4FF; border-radius:16px 16px 16px 4px; color:#1a1a1a; }
+    .bubble-user { background:#1E3A8A; border-radius:16px 16px 4px 16px; color:white; }
+    .tool-chip { background:#F7F6F3; border:1px solid #E5E7EB; border-radius:10px; font-size:0.72rem; color:#6b7280; padding:10px 12px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Nav backdrop -->
+  <div id="nav-backdrop" class="fixed inset-0 bg-black/40 z-40" onclick="closeNav()"></div>
+
+  <!-- ===== SLIDE-OUT LEFT NAV ===== -->
+  <div id="sidenav" class="fixed top-0 left-0 bottom-0 w-72 bg-white z-50 flex flex-col shadow-2xl">
+
+    <div class="flex items-center justify-between px-5 pt-6 pb-4 border-b border-gray-100">
+      <div class="flex items-center gap-2.5">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="10" fill="#1E3A8A"/>
+  <ellipse cx="16" cy="20" rx="6.5" ry="7" fill="#EEF2FF"/>
+  <ellipse cx="16" cy="12.5" rx="6" ry="5.5" fill="#EEF2FF"/>
+  <circle cx="13.5" cy="11.5" r="2.5" fill="#F59E0B"/>
+  <circle cx="18.5" cy="11.5" r="2.5" fill="#F59E0B"/>
+  <circle cx="13.5" cy="11.5" r="1.1" fill="#1E3A8A"/>
+  <circle cx="18.5" cy="11.5" r="1.1" fill="#1E3A8A"/>
+  <circle cx="14" cy="11" r="0.4" fill="white"/>
+  <circle cx="19" cy="11" r="0.4" fill="white"/>
+  <path d="M15 13.5 L16 15.2 L17 13.5 Z" fill="#F59E0B"/>
+  <path d="M11.5 7.5 L13 10.5 L10 10.5 Z" fill="#3B5BDB"/>
+  <path d="M20.5 7.5 L23 10.5 L20 10.5 Z" fill="#3B5BDB"/>
+  <path d="M9.5 20.5 Q7.5 23 9.5 26 Q12.5 24 11.5 20.5 Z" fill="#C7D2FE"/>
+  <path d="M22.5 20.5 Q24.5 23 22.5 26 Q19.5 24 20.5 20.5 Z" fill="#C7D2FE"/>
+</svg>
+        <div>
+          <p class="font-bold text-gray-900 leading-tight">Pyrch</p>
+          <p class="text-gray-400 text-xs leading-tight">Jane's Household</p>
+        </div>
+      </div>
+      <button onclick="closeNav()" class="w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <nav class="flex-1 px-3 py-2 overflow-y-auto">
+      <span class="nav-section">Main</span>
+      <a href="#" class="nav-item active" onclick="closeNav()">
+        <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9H18v8h-5v-5h-2v5H6v-8H3z"/></svg>
+        Home
+        <span class="ml-auto bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">2</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75M21 21v-2a4 4 0 00-3-3.87"/></svg>
+        Kids
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Schedule
+      </a>
+      <span class="nav-section mt-2">Modules</span>
+      <a href="#" class="nav-item">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Chore Management
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>
+        Token Ledger
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Game Hub
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        School Comms
+      </a>
+      <span class="nav-section mt-2">Account</span>
+      <a href="#" class="nav-item">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </a>
+      <a href="/pocs/" class="nav-item" style="color:#7c3aed">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        All POCs
+      </a>
+    </nav>
+
+    <div class="p-4 border-t border-gray-100">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700 text-sm">JD</div>
+        <div><p class="text-sm font-semibold text-gray-900">Jane Doe</p><p class="text-xs text-gray-400">jane@example.com</p></div>
+        <button class="ml-auto text-gray-400 hover:text-gray-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="bg-white border-b border-gray-100 sticky top-0 z-30 flex-shrink-0">
+    <div class="flex items-center gap-2 px-4 h-14">
+      <button onclick="openNav()" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition shrink-0" aria-label="Menu">
+        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="pill-scroll flex-1 py-1">
+        <button class="member-pill active">Today</button>
+        <button class="member-pill inactive">Emma</button>
+        <button class="member-pill inactive">Liam</button>
+        <button class="member-pill inactive">Zoe</button>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <div class="relative">
+          <button class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </button>
+          <span class="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none">2</span>
+        </div>
+        <button class="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700 text-sm">JD</button>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-32">
+
+    <!-- Urgent banner -->
+    <div class="bg-amber-400 rounded-2xl p-4 flex items-center justify-between gap-3">
+      <div>
+        <p class="font-bold text-amber-950 text-sm">2 chores need your approval</p>
+        <p class="text-amber-800 text-xs mt-0.5">Emma + Liam are waiting</p>
+      </div>
+      <div class="w-9 h-9 bg-amber-600/20 rounded-full flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-amber-900" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      </div>
+    </div>
+
+    <!-- Review queue label -->
+    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Needs Your Review</p>
+
+    <!-- Approval card 1 -->
+    <div class="card overflow-hidden">
+      <div class="bg-purple-100 w-full flex items-center justify-center" style="height:160px">
+        <p class="text-purple-400 text-sm font-medium">Emma&rsquo;s photo &mdash; Clean Room</p>
+      </div>
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-1">
+          <p class="font-bold text-gray-900">Emma &mdash; Clean Room</p>
+          <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center font-bold text-purple-700 text-sm">E</div>
+        </div>
+        <p class="text-gray-400 text-xs mb-3">14 minutes ago</p>
+        <div class="flex items-center gap-2 bg-green-50 rounded-xl p-3 mb-4">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
+  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
+  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
+  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
+  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
+  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
+  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
+</svg>
+          <p class="text-xs text-green-800 font-medium leading-snug">Rue: Bed made, floor clear &mdash; looks complete to me!</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button class="bg-green-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition">Approve</button>
+          <button class="bg-gray-100 text-gray-700 font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition">Reject</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approval card 2 -->
+    <div class="card overflow-hidden">
+      <div class="bg-amber-100 w-full flex items-center justify-center" style="height:160px">
+        <p class="text-amber-500 text-sm font-medium">Liam&rsquo;s photo &mdash; Take Out Trash</p>
+      </div>
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-1">
+          <p class="font-bold text-gray-900">Liam &mdash; Take Out Trash</p>
+          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-700 text-sm">L</div>
+        </div>
+        <p class="text-gray-400 text-xs mb-3">1 hour ago</p>
+        <div class="flex items-center gap-2 bg-amber-50 rounded-xl p-3 mb-4">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
+  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
+  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
+  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
+  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
+  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
+  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
+</svg>
+          <p class="text-xs text-amber-800 font-medium leading-snug">Rue: Trash bag isn&rsquo;t visible &mdash; this one needs your eyes</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button class="bg-green-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition">Approve</button>
+          <button class="bg-gray-100 text-gray-700 font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition">Reject</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kids today -->
+    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Kids Today</p>
+    <div class="card p-4 space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center font-bold text-purple-700 shrink-0">E</div>
+        <div class="flex-1">
+          <div class="flex justify-between mb-1.5"><span class="font-semibold text-gray-900 text-sm">Emma</span><span class="text-xs text-amber-600 font-semibold">2 pending</span></div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-gray-100 rounded-full h-2"><div class="bg-purple-500 h-2 rounded-full" style="width:75%"></div></div>
+            <span class="text-xs text-gray-400 shrink-0">3/4</span>
+          </div>
+        </div>
+        <span class="text-sm font-bold text-amber-500 shrink-0">120</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center font-bold text-blue-700 shrink-0">L</div>
+        <div class="flex-1">
+          <div class="flex justify-between mb-1.5"><span class="font-semibold text-gray-900 text-sm">Liam</span><span class="text-xs text-amber-600 font-semibold">1 pending</span></div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-gray-100 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width:50%"></div></div>
+            <span class="text-xs text-gray-400 shrink-0">1/2</span>
+          </div>
+        </div>
+        <span class="text-sm font-bold text-amber-500 shrink-0">85</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700 shrink-0">Z</div>
+        <div class="flex-1">
+          <div class="flex justify-between mb-1.5"><span class="font-semibold text-gray-900 text-sm">Zoe</span><span class="text-xs text-green-600 font-semibold">All done!</span></div>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-gray-100 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width:100%"></div></div>
+            <span class="text-xs text-gray-400 shrink-0">2/2</span>
+          </div>
+        </div>
+        <span class="text-sm font-bold text-amber-500 shrink-0">135</span>
+      </div>
+    </div>
+
+    <!-- Household health -->
+    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Household Health</p>
+    <div class="card p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3"><div class="w-2 h-2 bg-red-500 rounded-full shrink-0"></div><div><p class="font-medium text-gray-900 text-sm">Mow Lawn</p><p class="text-xs text-gray-400">11 days ago &middot; every 7 days</p></div></div>
+        <span class="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">Overdue</span>
+      </div>
+      <div class="border-t border-gray-50"></div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3"><div class="w-2 h-2 bg-amber-400 rounded-full shrink-0"></div><div><p class="font-medium text-gray-900 text-sm">Dishes</p><p class="text-xs text-gray-400">3 days ago &middot; every 3 days</p></div></div>
+        <span class="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">Due soon</span>
+      </div>
+      <div class="border-t border-gray-50"></div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3"><div class="w-2 h-2 bg-green-500 rounded-full shrink-0"></div><div><p class="font-medium text-gray-900 text-sm">Take Out Trash</p><p class="text-xs text-gray-400">1 day ago &middot; every 7 days</p></div></div>
+        <span class="text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">OK</span>
+      </div>
+    </div>
+
+    <!-- Rue suggestion -->
+    <div class="bg-[#1E3A8A] rounded-2xl p-4 flex items-center gap-3">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
+  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
+  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
+  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
+  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
+  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
+  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
+</svg>
+      <p class="flex-1 text-white text-sm font-medium leading-snug">The lawn is 4 days overdue. Assign it to Liam this weekend?</p>
+      <button class="shrink-0 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-3 py-2 rounded-xl transition">Plan it</button>
+    </div>
+
+  </main>
+
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <nav class="bnav">
+    <a href="#" class="bnav-item active">
+      <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9H18v8h-5v-5h-2v5H6v-8H3z"/></svg>
+      Home
+    </a>
+    <a href="#" class="bnav-item">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+      Kids
+    </a>
+    <!-- Ask Rue FAB -->
+    <div class="rue-fab" onclick="openRue()">
+      <div class="rue-fab-circle">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+  <ellipse cx="14" cy="18" rx="5.5" ry="6" fill="rgba(255,255,255,0.85)"/>
+  <ellipse cx="14" cy="10.5" rx="5" ry="4.5" fill="rgba(255,255,255,0.85)"/>
+  <circle cx="11.5" cy="9.5" r="2.2" fill="#F59E0B"/>
+  <circle cx="16.5" cy="9.5" r="2.2" fill="#F59E0B"/>
+  <circle cx="11.5" cy="9.5" r="1" fill="#1E3A8A"/>
+  <circle cx="16.5" cy="9.5" r="1" fill="#1E3A8A"/>
+  <circle cx="12" cy="9" r="0.35" fill="white"/>
+  <circle cx="17" cy="9" r="0.35" fill="white"/>
+  <path d="M13 11.5 L14 13.2 L15 11.5 Z" fill="#F59E0B"/>
+</svg>
+      </div>
+      <span class="rue-fab-label">Ask Rue</span>
+    </div>
+    <a href="#" class="bnav-item">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Schedule
+    </a>
+    <a href="#" class="bnav-item" onclick="openModules(); return false;">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Modules
+    </a>
+  </nav>
+
+
+  <!-- ===== RUE CHAT BACKDROP + PANEL ===== -->
+  <div id="rue-backdrop" class="fixed inset-0 bg-black/40 z-40" onclick="closeRue()"></div>
+  <div id="rue-panel" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl flex flex-col" style="height:75vh;max-height:620px">
+    <div class="flex justify-center pt-3 pb-1 shrink-0"><div class="w-10 h-1 bg-gray-200 rounded-full"></div></div>
+
+    <div class="flex items-center gap-3 px-5 py-3 border-b border-gray-100 shrink-0">
+      <div class="relative">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" class="shrink-0">
+  <circle cx="22" cy="22" r="22" fill="#EEF2FF"/>
+  <ellipse cx="22" cy="29" rx="8" ry="8.5" fill="#C7D2FE"/>
+  <ellipse cx="22" cy="17.5" rx="7.5" ry="7" fill="#C7D2FE"/>
+  <circle cx="18.5" cy="15.5" r="3.2" fill="#F59E0B"/>
+  <circle cx="25.5" cy="15.5" r="3.2" fill="#F59E0B"/>
+  <circle cx="18.5" cy="15.5" r="1.5" fill="#1E3A8A"/>
+  <circle cx="25.5" cy="15.5" r="1.5" fill="#1E3A8A"/>
+  <circle cx="19.2" cy="14.8" r="0.55" fill="white"/>
+  <circle cx="26.2" cy="14.8" r="0.55" fill="white"/>
+  <path d="M20.5 18.5 L22 20.5 L23.5 18.5 Z" fill="#F59E0B"/>
+  <path d="M15 10 L18 14.5 L13.5 14.5 Z" fill="#4F46E5"/>
+  <path d="M29 10 L32 14.5 L27 14.5 Z" fill="#4F46E5"/>
+</svg>
+        <div class="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white"></div>
+      </div>
+      <div>
+        <p class="font-bold text-gray-900">Rue</p>
+        <p class="text-xs text-gray-400">Your household AI &middot; <span class="text-green-500 font-semibold">Online</span></p>
+      </div>
+      <button onclick="closeRue()" class="ml-auto w-8 h-8 flex items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div class="flex items-start gap-2.5">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
+  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
+  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
+  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
+  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
+  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
+  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
+</svg>
+        <div class="bubble-rue p-3 max-w-xs text-sm leading-relaxed">Hi Jane! I keep an eye on your household so you don&rsquo;t have to. Ask me anything &mdash; or let me tell you what needs attention.</div>
+      </div>
+      <div class="flex items-start gap-2.5">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
+  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
+  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
+  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
+  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
+  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
+  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
+</svg>
+        <div class="space-y-2 max-w-xs">
+          <div class="bubble-rue p-3 text-sm leading-relaxed">Here&rsquo;s what I noticed this morning:</div>
+          <div class="tool-chip space-y-1">
+            <p>&#128308; Lawn &mdash; overdue by 4 days</p>
+            <p>&#128993; Dishes &mdash; due today</p>
+            <p>&#128994; Trash &mdash; OK</p>
+          </div>
+          <div class="bubble-rue p-3 text-sm leading-relaxed">Want me to assign these to the kids for this weekend?</div>
+        </div>
+      </div>
+      <div class="flex justify-end">
+        <div class="bubble-user p-3 max-w-xs text-sm">Yes &mdash; lawn to Liam, dishes to Emma, Saturday</div>
+      </div>
+      <div class="flex items-start gap-2.5">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="shrink-0">
+  <circle cx="14" cy="14" r="14" fill="#EEF2FF"/>
+  <ellipse cx="14" cy="18" rx="5" ry="5.5" fill="#C7D2FE"/>
+  <ellipse cx="14" cy="11" rx="4.5" ry="4" fill="#C7D2FE"/>
+  <circle cx="11.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="16.5" cy="10" r="2" fill="#F59E0B"/>
+  <circle cx="11.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="16.5" cy="10" r="0.9" fill="#1E3A8A"/>
+  <circle cx="12" cy="9.5" r="0.35" fill="white"/>
+  <circle cx="17" cy="9.5" r="0.35" fill="white"/>
+  <path d="M13 12 L14 13.5 L15 12 Z" fill="#F59E0B"/>
+</svg>
+        <div class="space-y-2 max-w-xs">
+          <div class="tool-chip space-y-1">
+            <p class="text-green-600">&#10003; Liam &rarr; Mow Lawn &rarr; Saturday</p>
+            <p class="text-green-600">&#10003; Emma &rarr; Dishes &rarr; Saturday</p>
+          </div>
+          <div class="bubble-rue p-3 text-sm leading-relaxed">Done! Both are scheduled. They&rsquo;ll see them in the app. Anything else I can help with?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 py-3 border-t border-gray-100 shrink-0">
+      <div class="flex gap-2">
+        <input type="text" placeholder="Ask Rue anything&hellip;" class="flex-1 bg-gray-50 text-sm rounded-2xl px-4 py-3 border border-gray-200 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"/>
+        <button class="w-11 h-11 bg-[#1E3A8A] rounded-2xl flex items-center justify-center hover:bg-blue-800 transition shrink-0">
+          <svg class="w-4 h-4 text-white rotate-90" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+        </button>
+      </div>
+      <div class="flex gap-2 mt-2.5 overflow-x-auto pb-1" style="scrollbar-width:none">
+        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">What&rsquo;s overdue?</button>
+        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">Plan this week</button>
+        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">Approve all</button>
+        <button class="shrink-0 text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full whitespace-nowrap">Who&rsquo;s done?</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MODULES BACKDROP + PANEL ===== -->
+  <div id="mod-backdrop" class="fixed inset-0 bg-black/40 z-40" onclick="closeModules()"></div>
+  <div id="modules-panel" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl">
+    <div class="flex justify-center pt-3 pb-1"><div class="w-10 h-1 bg-gray-200 rounded-full"></div></div>
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h2 class="font-bold text-gray-900 text-lg">Modules</h2>
+      <p class="text-gray-400 text-sm">Everything your household needs</p>
+    </div>
+    <div class="px-4 py-4 grid grid-cols-2 gap-3 overflow-y-auto" style="max-height:55vh">
+      <div class="bg-purple-50 rounded-2xl p-4 border border-purple-100 cursor-pointer active:scale-95 transition">
+        <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center mb-3"><svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div>
+        <p class="font-semibold text-gray-900 text-sm">Chore Management</p>
+        <p class="text-xs text-gray-400 mt-0.5">Assign, track, approve</p>
+      </div>
+      <div class="bg-blue-50 rounded-2xl p-4 border border-blue-100 cursor-pointer active:scale-95 transition">
+        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mb-3"><svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg></div>
+        <p class="font-semibold text-gray-900 text-sm">Child Management</p>
+        <p class="text-xs text-gray-400 mt-0.5">Profiles, PINs, tokens</p>
+      </div>
+      <div class="bg-amber-50 rounded-2xl p-4 border border-amber-100 cursor-pointer active:scale-95 transition">
+        <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center mb-3"><svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></div>
+        <p class="font-semibold text-gray-900 text-sm">Token Ledger</p>
+        <p class="text-xs text-gray-400 mt-0.5">Earn, spend, history</p>
+      </div>
+      <div class="bg-green-50 rounded-2xl p-4 border border-green-100 cursor-pointer active:scale-95 transition">
+        <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mb-3"><svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <p class="font-semibold text-gray-900 text-sm">Game Hub</p>
+        <p class="text-xs text-gray-400 mt-0.5">Unlock &amp; play</p>
+      </div>
+      <div class="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 cursor-pointer active:scale-95 transition">
+        <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center mb-3"><svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+        <p class="font-semibold text-gray-900 text-sm">School Comms</p>
+        <p class="text-xs text-gray-400 mt-0.5">Emails, homework, events</p>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-4 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
+        <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mb-2"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+        <p class="font-semibold text-gray-400 text-sm">Coming soon</p>
+      </div>
+    </div>
+    <div class="px-4 pb-8 pt-2">
+      <button onclick="closeModules()" class="w-full py-3.5 bg-gray-100 text-gray-600 font-semibold rounded-2xl">Close</button>
+    </div>
+  </div>
+
+
+  <script>
+    // Side nav
+    function openNav()  { document.getElementById('sidenav').classList.add('open'); document.getElementById('nav-backdrop').classList.add('open'); document.body.style.overflow='hidden'; }
+    function closeNav() { document.getElementById('sidenav').classList.remove('open'); document.getElementById('nav-backdrop').classList.remove('open'); document.body.style.overflow=''; }
+
+    // Rue chat
+    function openRue()  { document.getElementById('rue-panel').classList.add('open'); document.getElementById('rue-backdrop').classList.add('open'); document.body.style.overflow='hidden'; }
+    function closeRue() { document.getElementById('rue-panel').classList.remove('open'); document.getElementById('rue-backdrop').classList.remove('open'); document.body.style.overflow=''; }
+
+    // Modules
+    function openModules()  { document.getElementById('modules-panel').classList.add('open'); document.getElementById('mod-backdrop').classList.add('open'); document.body.style.overflow='hidden'; }
+    function closeModules() { document.getElementById('modules-panel').classList.remove('open'); document.getElementById('mod-backdrop').classList.remove('open'); document.body.style.overflow=''; }
+
+    // Member pills
+    document.querySelectorAll('.member-pill').forEach(p => {
+      p.addEventListener('click', function() {
+        document.querySelectorAll('.member-pill').forEach(x => { x.classList.remove('active'); x.classList.add('inactive'); });
+        this.classList.add('active'); this.classList.remove('inactive');
+      });
+    });
+  </script>
+</body>
+</html>
