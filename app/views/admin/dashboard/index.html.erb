@@ -409,4 +409,10 @@
     <%= link_to '+ New Chore Assignment', new_chore_assignment_path, class: "px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-semibold transition-all" %>
     <%= link_to '+ New Chore', new_chore_path, class: "px-6 py-3 rounded-lg bg-purple-500 text-white hover:bg-purple-600 font-semibold transition-all" %>
   </div>
+
+  <!-- Sentry POC test — remove after confirming Sentry works -->
+  <div class="text-center">
+    <%= button_to "🔴 Send Sentry Test Error", admin_sentry_test_path, method: :post,
+          class: "text-xs text-gray-400 hover:text-red-500 underline bg-transparent border-0 cursor-pointer" %>
+  </div>
 </div>

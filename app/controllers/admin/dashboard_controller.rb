@@ -41,5 +41,12 @@ module Admin
         .order(updated_at: :desc)
         .limit(20)
     end
+
+    def sentry_test
+      raise "Sentry test from admin dashboard — #{Time.current}"
+    rescue => e
+      Sentry.capture_exception(e)
+      redirect_to admin_root_path, notice: "Sentry test error sent! Check your Sentry dashboard."
+    end
   end
 end

@@ -52,6 +52,7 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: 'dashboard#index'
     resources :dashboard, only: [:index]
+    post 'sentry_test', to: 'dashboard#sentry_test', as: :sentry_test
   end
   # Super-admin namespace and Devise routes (separate from customer /admin)
   devise_for :admin_users, path: 'super_admin', class_name: 'AdminUser'

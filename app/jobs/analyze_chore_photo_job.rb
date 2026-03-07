@@ -27,9 +27,13 @@ class AnalyzeChorePhotoJob < ApplicationJob
   private
 
   def analyze_photo(attempt, chore)
-    image_data = attempt.photo.download
+    tempfile = Tempfile.new(['chore_photo', '.jpg'])
+    tempfile.binmode
+    tempfile.write(attempt.photo.download)
+    tempfile.rewind
+
     resized = ImageProcessing::MiniMagick
-      .source(StringIO.new(image_data))
+      .source(tempfile.path)
       .resize_to_limit(1568, 1568)
       .convert("jpeg")
       .call
@@ -78,6 +82,8 @@ class AnalyzeChorePhotoJob < ApplicationJob
     message = lines[1].to_s.strip
 
     [verdict, message]
+  ensure
+    tempfile&.close!
   end
 
   def apply_verdict(attempt, assignment, chore, verdict, message)
