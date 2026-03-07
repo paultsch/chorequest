@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POC 1 — Spotify Dark (ChoreQuest / Pyrch)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f0f0f; color: #fff; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    .sidebar-item:hover { background: rgba(255,255,255,0.08); }
+    .card-dark { background: #1a1a1a; border-radius: 12px; }
+    .card-dark:hover { background: #222; }
+    .approve-btn { background: #22c55e; } .approve-btn:hover { background: #16a34a; }
+    .reject-btn { background: #ef4444; } .reject-btn:hover { background: #dc2626; }
+    .status-ok { background: #14532d; color: #86efac; }
+    .status-pending { background: #713f12; color: #fde68a; }
+    .status-overdue { background: #7f1d1d; color: #fca5a5; }
+    .progress-bar { height: 3px; background: #333; border-radius: 2px; }
+    .progress-fill { height: 3px; background: #22c55e; border-radius: 2px; }
+    .rue-bubble { background: #1e3a5f; border: 1px solid #2563eb; border-radius: 12px; }
+  </style>
+</head>
+<body class="min-h-screen flex">
+
+  <!-- Sidebar (desktop) -->
+  <aside class="hidden md:flex flex-col w-64 bg-black min-h-screen p-4 shrink-0 fixed top-0 left-0 bottom-0">
+    <!-- Logo -->
+    <div class="mb-8 px-2 pt-2 flex items-center gap-2">
+      <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">P</div>
+      <span class="text-white font-bold text-lg tracking-tight">Pyrch</span>
+      <span class="text-gray-500 text-xs ml-1">beta</span>
+    </div>
+
+    <!-- Nav -->
+    <nav class="space-y-1">
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-white font-semibold bg-white/10">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9H18v8h-5v-5h-2v5H6v-8H3z"/></svg>
+        Today
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 font-medium">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.87"/></svg>
+        Kids
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 font-medium">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Schedule
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 font-medium">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Chores
+      </a>
+      <a href="#" class="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 font-medium">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>
+        Tokens
+      </a>
+    </nav>
+
+    <!-- Rue AI section -->
+    <div class="mt-auto">
+      <div class="rue-bubble p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">R</div>
+          <span class="text-blue-300 text-sm font-semibold">Rue says...</span>
+        </div>
+        <p class="text-gray-300 text-xs leading-relaxed">The lawn hasn't been mowed in 11 days — it's overdue. Emma has 2 chores awaiting approval. Want me to plan this week?</p>
+        <button class="mt-3 text-xs text-blue-400 font-semibold hover:text-blue-300">Ask Rue anything →</button>
+      </div>
+      <div class="mt-4 px-2 flex items-center gap-2">
+        <div class="w-7 h-7 bg-gray-700 rounded-full flex items-center justify-center text-xs font-medium">JD</div>
+        <span class="text-gray-400 text-sm">Jane Doe</span>
+        <svg class="w-4 h-4 text-gray-600 ml-auto" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <p class="text-gray-500 text-sm font-medium uppercase tracking-wider">Friday, March 7</p>
+        <h1 class="text-3xl font-bold text-white mt-0.5">Good morning, Jane</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <button class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </button>
+          <span class="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold">2</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending banner (urgent) -->
+    <div class="bg-yellow-900/40 border border-yellow-600/40 rounded-xl p-4 mb-6 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-yellow-400 text-xl">⏳</span>
+        <div>
+          <p class="text-yellow-200 font-semibold text-sm">2 chores awaiting your review</p>
+          <p class="text-yellow-500 text-xs">Emma submitted Clean Room · Liam submitted Take Out Trash</p>
+        </div>
+      </div>
+      <button class="bg-yellow-500 text-yellow-950 text-xs font-bold px-4 py-2 rounded-lg hover:bg-yellow-400">Review Now</button>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="card-dark p-5">
+        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Kids</p>
+        <p class="text-3xl font-bold text-white">3</p>
+      </div>
+      <div class="card-dark p-5">
+        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Pending</p>
+        <p class="text-3xl font-bold text-yellow-400">2</p>
+      </div>
+      <div class="card-dark p-5">
+        <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Tokens Out</p>
+        <p class="text-3xl font-bold text-blue-400">340</p>
+      </div>
+    </div>
+
+    <!-- Kids row -->
+    <h2 class="text-gray-400 text-xs uppercase tracking-widest font-semibold mb-4">Your Kids Today</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+
+      <!-- Child card -->
+      <div class="card-dark p-5 cursor-pointer">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <p class="text-white font-semibold text-lg">Emma</p>
+            <span class="text-xs px-2 py-0.5 rounded-full status-pending font-medium">2 awaiting review</span>
+          </div>
+          <div class="w-10 h-10 bg-purple-800 rounded-full flex items-center justify-center font-bold text-purple-200">E</div>
+        </div>
+        <p class="text-gray-500 text-xs mb-2">3/4 chores done</p>
+        <div class="progress-bar w-full mb-1"><div class="progress-fill" style="width: 75%"></div></div>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-yellow-400 text-sm font-semibold">120 tokens</span>
+          <button class="text-xs text-gray-500 hover:text-white">View →</button>
+        </div>
+      </div>
+
+      <div class="card-dark p-5 cursor-pointer">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <p class="text-white font-semibold text-lg">Liam</p>
+            <span class="text-xs px-2 py-0.5 rounded-full status-pending font-medium">1 awaiting review</span>
+          </div>
+          <div class="w-10 h-10 bg-blue-800 rounded-full flex items-center justify-center font-bold text-blue-200">L</div>
+        </div>
+        <p class="text-gray-500 text-xs mb-2">1/2 chores done</p>
+        <div class="progress-bar w-full mb-1"><div class="progress-fill" style="width: 50%"></div></div>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-yellow-400 text-sm font-semibold">85 tokens</span>
+          <button class="text-xs text-gray-500 hover:text-white">View →</button>
+        </div>
+      </div>
+
+      <div class="card-dark p-5 cursor-pointer">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <p class="text-white font-semibold text-lg">Zoe</p>
+            <span class="text-xs px-2 py-0.5 rounded-full status-ok font-medium">All done</span>
+          </div>
+          <div class="w-10 h-10 bg-green-800 rounded-full flex items-center justify-center font-bold text-green-200">Z</div>
+        </div>
+        <p class="text-gray-500 text-xs mb-2">2/2 chores done</p>
+        <div class="progress-bar w-full mb-1"><div class="progress-fill" style="width: 100%"></div></div>
+        <div class="flex items-center justify-between mt-3">
+          <span class="text-yellow-400 text-sm font-semibold">135 tokens</span>
+          <button class="text-xs text-gray-500 hover:text-white">View →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approval queue -->
+    <h2 class="text-gray-400 text-xs uppercase tracking-widest font-semibold mb-4">Review Queue</h2>
+    <div class="space-y-3 mb-8">
+
+      <div class="card-dark p-4 flex items-center gap-4">
+        <img src="https://placehold.co/60x60/1a1a2e/a78bfa?text=Photo" class="w-16 h-16 rounded-xl object-cover border border-gray-700" />
+        <div class="flex-1 min-w-0">
+          <p class="text-white font-semibold">Emma — Clean Room</p>
+          <p class="text-gray-500 text-xs mt-0.5">Submitted 14 min ago</p>
+          <div class="flex items-center gap-2 mt-1.5">
+            <span class="text-xs bg-green-900/50 text-green-400 px-2 py-0.5 rounded font-medium">Rue: Looks good</span>
+          </div>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button class="approve-btn text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Approve</button>
+          <button class="reject-btn text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Reject</button>
+        </div>
+      </div>
+
+      <div class="card-dark p-4 flex items-center gap-4">
+        <img src="https://placehold.co/60x60/1a1a1a/6b7280?text=Photo" class="w-16 h-16 rounded-xl object-cover border border-gray-700" />
+        <div class="flex-1 min-w-0">
+          <p class="text-white font-semibold">Liam — Take Out Trash</p>
+          <p class="text-gray-500 text-xs mt-0.5">Submitted 1 hr ago</p>
+          <div class="flex items-center gap-2 mt-1.5">
+            <span class="text-xs bg-yellow-900/50 text-yellow-400 px-2 py-0.5 rounded font-medium">Rue: Needs your review</span>
+          </div>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button class="approve-btn text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Approve</button>
+          <button class="reject-btn text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Reject</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <h2 class="text-gray-400 text-xs uppercase tracking-widest font-semibold mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <button class="card-dark p-4 text-left hover:bg-gray-800 transition">
+        <div class="w-8 h-8 bg-purple-800 rounded-lg flex items-center justify-center mb-3">
+          <svg class="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <p class="text-white text-sm font-medium">New Chore</p>
+        <p class="text-gray-600 text-xs mt-0.5">Add a template</p>
+      </button>
+      <button class="card-dark p-4 text-left hover:bg-gray-800 transition">
+        <div class="w-8 h-8 bg-blue-800 rounded-lg flex items-center justify-center mb-3">
+          <svg class="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </div>
+        <p class="text-white text-sm font-medium">Assign Chore</p>
+        <p class="text-gray-600 text-xs mt-0.5">Schedule it</p>
+      </button>
+      <button class="card-dark p-4 text-left hover:bg-gray-800 transition">
+        <div class="w-8 h-8 bg-yellow-800 rounded-lg flex items-center justify-center mb-3">
+          <svg class="w-4 h-4 text-yellow-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <p class="text-white text-sm font-medium">Grant Tokens</p>
+        <p class="text-gray-600 text-xs mt-0.5">Reward a kid</p>
+      </button>
+      <button class="card-dark p-4 text-left hover:bg-gray-800 transition">
+        <div class="w-8 h-8 bg-green-800 rounded-lg flex items-center justify-center mb-3">
+          <svg class="w-4 h-4 text-green-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <p class="text-white text-sm font-medium">Add Child</p>
+        <p class="text-gray-600 text-xs mt-0.5">New family member</p>
+      </button>
+    </div>
+  </main>
+
+  <!-- Mobile bottom nav -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 flex">
+    <a href="#" class="flex-1 flex flex-col items-center py-3 text-white">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9H18v8h-5v-5h-2v5H6v-8H3z"/></svg>
+      <span class="text-xs mt-1 font-medium">Today</span>
+    </a>
+    <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-600">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>
+      <span class="text-xs mt-1">Kids</span>
+    </a>
+    <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-600">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      <span class="text-xs mt-1">Schedule</span>
+    </a>
+    <a href="#" class="flex-1 flex flex-col items-center py-3 text-gray-600">
+      <div class="relative">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full text-xs flex items-center justify-center font-bold">2</span>
+      </div>
+      <span class="text-xs mt-1">Alerts</span>
+    </a>
+  </nav>
+
+</body>
+</html>

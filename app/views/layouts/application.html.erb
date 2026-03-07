@@ -64,6 +64,7 @@
               <%= link_to games_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Games<% end %>
               <%= link_to school_messages_path, class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>School<% end %>
               <%= link_to edit_parent_path(current_parent), class: "px-3 py-2 rounded-full bg-gray-100 text-gray-700 hover:bg-blue-100 hover:text-blue-600 font-semibold transition" do %>Settings<% end %>
+              <a href="/pocs/" class="px-3 py-2 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold transition">Design POCs</a>
               <%= link_to "Sign Out", destroy_parent_session_path, data: { turbo_method: :delete }, class: "px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 font-semibold transition-all duration-200 shadow-sm" %>
             </div>
             <div data-nav-target="menu" class="hidden md:hidden absolute left-0 right-0 bg-white border-t border-gray-100 shadow-md">
@@ -78,6 +79,7 @@
                 <%= link_to games_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Games<% end %>
                 <%= link_to school_messages_path, class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>School<% end %>
                 <%= link_to edit_parent_path(current_parent), class: 'block px-3 py-2 rounded text-gray-700 hover:bg-gray-50' do %>Settings<% end %>
+                <a href="/pocs/" class="block px-3 py-2 rounded bg-purple-50 text-purple-700 font-semibold hover:bg-purple-100">Design POCs</a>
                 <div class="pt-2"><%= link_to destroy_parent_session_path, data: { turbo_method: :delete }, class: 'block px-3 py-2 rounded bg-blue-600 text-white font-semibold' do %>Sign Out<% end %></div>
               </div>
             </div>
