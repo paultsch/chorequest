@@ -301,6 +301,45 @@ class RueController < ApplicationController
       assignment.destroy!
       "Removed '#{chore_name}' from #{child_name}'s schedule on #{scheduled_on.strftime('%B %-d, %Y')}."
 
+    when "get_chore_health"
+      today = Date.today
+      rows = current_parent.chores.includes(:chore_assignments).map do |chore|
+        last_approved = chore.chore_assignments
+          .select { |a| a.approved == true && a.completed_at.present? }
+          .max_by(&:completed_at)
+
+        last_completed_on = last_approved&.completed_at&.to_date
+        frequency_days = chore.frequency_days
+        due_on = last_completed_on && frequency_days ? last_completed_on + frequency_days : nil
+        days_overdue = due_on ? (today - due_on).to_i : nil
+
+        {
+          chore_name:        chore.name,
+          last_completed_on: last_completed_on&.iso8601 || "Never",
+          frequency_days:    frequency_days,
+          days_overdue:      days_overdue
+        }
+      end
+
+      if rows.empty?
+        "No chores found for this household."
+      else
+        lines = rows.map do |r|
+          overdue_note = if r[:days_overdue].nil?
+            "(no schedule)"
+          elsif r[:days_overdue] > 0
+            "(#{r[:days_overdue]} days overdue)"
+          elsif r[:days_overdue] == 0
+            "(due today)"
+          else
+            "(due in #{r[:days_overdue].abs} days)"
+          end
+          freq = r[:frequency_days] ? "every #{r[:frequency_days]} days" : "no frequency set"
+          "- #{r[:chore_name]}: last done #{r[:last_completed_on]}, #{freq}, #{overdue_note}"
+        end
+        lines.join("\n")
+      end
+
     else
       "Unknown tool: #{tool_call.name}"
     end
@@ -333,6 +372,7 @@ class RueController < ApplicationController
       - Create, edit, and delete chores
       - Assign chores to children for specific dates
       - Remove chore assignments
+      - Check chore health (which chores are overdue or due soon) with get_chore_health
 
       Current parent: #{current_parent.email}
       Their children: #{children_text}
@@ -554,6 +594,15 @@ class RueController < ApplicationController
             }
           },
           required: ["child_name", "chore_name", "date"]
+        }
+      },
+      {
+        name: "get_chore_health",
+        description: "Returns the health status of all chores for this household: when each was last completed, how often it repeats, and whether it is overdue. Use this when the parent asks what chores need to be done, what's overdue, or what they should assign next.",
+        input_schema: {
+          type: "object",
+          properties: {},
+          required: []
         }
       }
     ]

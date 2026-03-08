@@ -65,6 +65,36 @@ class ChoresController < ApplicationController
     end
   end
 
+  # POST /chores/suggest_tasks
+  def suggest_tasks
+    chore_name = params[:chore_name].to_s.strip
+    return render json: { error: 'Please enter a chore name first.' }, status: :unprocessable_entity if chore_name.blank?
+
+    prompt = "Suggest 3-5 specific, actionable steps a child aged 6-12 would take to complete a household chore called '#{chore_name}'. Return ONLY a JSON array of short step titles (under 6 words each). No explanation. Example: [\"Make the bed\", \"Pick up clothes\", \"Vacuum the floor\"]"
+
+    client   = Anthropic::Client.new(api_key: ENV.fetch('ANTHROPIC_API_KEY'))
+    response = Timeout.timeout(20) do
+      client.messages.create(
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 256,
+        messages:   [{ role: 'user', content: prompt }]
+      )
+    end
+
+    raw  = response.content.first.text.strip
+    text = raw.gsub(/\A```(?:json)?\n?/, '').gsub(/\n?```\z/, '').strip
+    tasks = JSON.parse(text)
+    tasks = tasks.first(5) if tasks.is_a?(Array)
+
+    render json: { tasks: tasks }
+  rescue JSON::ParserError => e
+    Rails.logger.error "suggest_tasks JSON parse failed: #{e.message}"
+    render json: { error: 'AI returned an unexpected format. Please try again.' }, status: :unprocessable_entity
+  rescue => e
+    Rails.logger.error "suggest_tasks failed: #{e.class}: #{e.message}"
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   # POST /chores/improve_definition
   def improve_definition
     name        = params[:name].to_s.strip
@@ -124,6 +154,9 @@ class ChoresController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def chore_params
-      params.require(:chore).permit(:name, :description, :definition_of_done, :token_amount)
+      params.require(:chore).permit(
+        :name, :description, :definition_of_done, :token_amount, :frequency_days, :model_photo,
+        chore_tasks_attributes: [:id, :title, :position, :photo_required, :model_photo, :_destroy]
+      )
     end
 end

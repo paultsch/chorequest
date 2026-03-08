@@ -7,7 +7,7 @@
     <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg"><%= alert %></div>
   <% end %>
 
-  <%# Confetti — fires when a chore was just approved (notice present + at least one approved) %>
+  <%# Confetti — only fires when the assignment just became fully approved %>
   <% if notice.present? && @assignments.any? { |a| a.approved == true } %>
     <div data-controller="confetti"></div>
   <% end %>
@@ -58,39 +58,173 @@
       <% else %>
         <div class="space-y-4">
           <% @assignments.each do |assignment| %>
-            <div class="p-4 bg-white rounded-xl shadow-sm flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <div class="font-semibold text-gray-900"><%= assignment.chore&.name || 'Chore' %></div>
-                <div class="text-sm text-gray-500"><%= assignment.chore&.definition_of_done %></div>
+            <% chore = assignment.chore %>
+            <% has_tasks = chore&.chore_tasks&.any? %>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+              <%# Chore header %>
+              <div class="px-4 pt-4 pb-2">
+                <div class="font-semibold text-gray-900"><%= chore&.name || 'Chore' %></div>
+                <div class="text-sm text-gray-500"><%= chore&.definition_of_done %></div>
               </div>
-              <div class="flex-shrink-0">
-                <% latest = assignment.latest_attempt %>
-                <% if assignment.approved == true %>
-                  <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-sm">Done! ⭐</span>
-                <% elsif latest&.status_pending? %>
-                  <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium">Mom is checking... 👀</span>
-                <% elsif latest&.status_rejected? %>
-                  <div class="flex flex-col items-end gap-1">
-                    <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-semibold">Try again! 🔄</span>
-                    <% if latest.parent_note.present? %>
-                      <p class="text-xs text-red-500 text-right max-w-[140px]"><%= latest.parent_note %></p>
-                    <% end %>
-                    <%= link_to 'Try Again', public_new_attempt_path(params[:token], assignment.id),
-                          class: 'mt-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700',
-                          data: { turbo_frame: "_top" } %>
-                  </div>
-                <% elsif assignment.require_photo? %>
-                  <%= link_to 'Mark Done', public_new_attempt_path(params[:token], assignment.id),
-                        class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700',
-                        data: { turbo_frame: "_top" } %>
-                <% else %>
-                  <%= button_to public_create_attempt_path(params[:token]), method: :post,
-                        params: { chore_assignment_id: assignment.id },
-                        class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700' do %>
-                    Mark Done
+
+              <% if has_tasks %>
+                <%# ---- PER-STEP FLOW ---- %>
+                <div class="px-4 pb-3 space-y-3">
+                  <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Steps to complete:</p>
+                  <% chore.chore_tasks.order(:position).each_with_index do |task, i| %>
+                    <% task_attempt = assignment.chore_attempts.where(chore_task_id: task.id).order(:created_at).last %>
+                    <% task_approved = task_attempt&.status_approved? %>
+                    <% task_pending  = task_attempt&.status_pending? %>
+                    <% task_rejected = task_attempt&.status_rejected? %>
+
+                    <div class="rounded-lg border <%= task_approved ? 'border-green-200 bg-green-50' : task_pending ? 'border-yellow-200 bg-yellow-50' : task_rejected ? 'border-red-100 bg-red-50' : 'border-gray-200 bg-gray-50' %> p-3">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-start gap-2 min-w-0 flex-1">
+                          <span class="text-amber-500 font-bold text-xs mt-0.5 shrink-0"><%= i + 1 %>.</span>
+                          <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-gray-800"><%= task.title %></p>
+                            <% if task_approved %>
+                              <span class="inline-flex items-center gap-1 text-xs text-green-700 font-semibold mt-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Done!
+                              </span>
+                            <% elsif task_pending %>
+                              <span class="text-xs text-yellow-700 mt-1 block">Your grownup is checking... 👀</span>
+                            <% elsif task_rejected %>
+                              <span class="text-xs text-red-600 font-medium mt-1 block">Try again! 🔄</span>
+                              <% if task_attempt.parent_note.present? %>
+                                <p class="text-xs text-red-500 mt-0.5"><%= task_attempt.parent_note %></p>
+                              <% end %>
+                            <% end %>
+                          </div>
+                        </div>
+                        <%# Model photo thumbnail if present %>
+                        <% if task.model_photo.attached? %>
+                          <div class="shrink-0">
+                            <%= image_tag task.model_photo, class: 'w-14 h-14 object-cover rounded-lg border border-gray-200',
+                                  title: "What #{task.title} should look like" %>
+                          </div>
+                        <% end %>
+                      </div>
+
+                      <%# Photo comparison: model photo + child's latest attempt side-by-side %>
+                      <% if task_attempt&.photo&.attached? && task.model_photo.attached? %>
+                        <div class="mt-2 flex gap-2">
+                          <div class="flex-1">
+                            <p class="text-xs text-gray-400 mb-1">What it should look like:</p>
+                            <%= image_tag task.model_photo, class: 'w-full h-24 object-cover rounded-lg border border-gray-200' %>
+                          </div>
+                          <div class="flex-1">
+                            <p class="text-xs text-gray-400 mb-1">Your photo:</p>
+                            <%= image_tag task_attempt.photo, class: 'w-full h-24 object-cover rounded-lg border border-gray-200' %>
+                          </div>
+                        </div>
+                      <% elsif task_attempt&.photo&.attached? %>
+                        <div class="mt-2">
+                          <p class="text-xs text-gray-400 mb-1">Your photo:</p>
+                          <%= image_tag task_attempt.photo, class: 'w-20 h-20 object-cover rounded-lg border border-gray-200' %>
+                        </div>
+                      <% end %>
+
+                      <%# Action area — photo upload or client-side check depending on task type %>
+                      <% if !task_approved && !task_pending %>
+                        <% if task.photo_required? %>
+                          <%# Photo-required task: show upload form %>
+                          <%= form_with url: public_create_attempt_path(params[:token]), method: :post, multipart: true,
+                                class: 'mt-3' do |f| %>
+                            <%= hidden_field_tag :chore_assignment_id, assignment.id %>
+                            <%= hidden_field_tag 'chore_attempt[chore_task_id]', task.id %>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                              <%= file_field_tag 'chore_attempt[photo]',
+                                    accept: 'image/*', capture: 'environment', required: true,
+                                    class: 'flex-1 text-xs text-gray-700 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100' %>
+                              <button type="submit"
+                                      class="shrink-0 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 transition">
+                                📷 Submit photo
+                              </button>
+                            </div>
+                          <% end %>
+                        <% else %>
+                          <%# Non-photo task: one-tap form button — auto-approved server-side %>
+                          <%= button_to public_create_attempt_path(params[:token]), method: :post,
+                                params: { chore_assignment_id: assignment.id,
+                                          'chore_attempt[chore_task_id]' => task.id },
+                                class: 'mt-3 w-full px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600 transition' do %>
+                            ✓ Mark done
+                          <% end %>
+                        <% end %>
+                      <% end %>
+                    </div>
                   <% end %>
-                <% end %>
-              </div>
+
+                  <%# All-steps-done status for the overall assignment %>
+                  <% if assignment.approved == true %>
+                    <div class="flex items-center gap-2 py-2">
+                      <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-sm">All done! ⭐</span>
+                    </div>
+                  <% end %>
+                </div>
+
+              <% else %>
+                <%# ---- SIMPLE (WHOLE-CHORE) FLOW ---- %>
+                <div class="px-4 pb-4">
+                  <%# Chore-level model photo %>
+                  <% if chore&.model_photo&.attached? %>
+                    <div class="mb-3">
+                      <p class="text-xs text-gray-400 mb-1">What it should look like:</p>
+                      <%= image_tag chore.model_photo, class: 'w-full max-w-xs h-28 object-cover rounded-lg border border-gray-200' %>
+                    </div>
+                  <% end %>
+
+                  <%# Task checklist (display only — no photo upload per task) %>
+                  <% if chore&.chore_tasks&.any? %>
+                    <div class="mb-3">
+                      <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">What you need to do:</p>
+                      <ol class="space-y-0.5">
+                        <% chore.chore_tasks.each_with_index do |task, i| %>
+                          <li class="flex items-start gap-1.5 text-sm text-gray-700">
+                            <span class="text-amber-500 font-bold text-xs mt-0.5 shrink-0"><%= i + 1 %>.</span>
+                            <span><%= task.title %></span>
+                          </li>
+                        <% end %>
+                      </ol>
+                    </div>
+                  <% end %>
+
+                  <%# Action button / status badge %>
+                  <div class="flex justify-end">
+                    <% latest = assignment.latest_attempt %>
+                    <% if assignment.approved == true %>
+                      <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-sm">Done! ⭐</span>
+                    <% elsif latest&.status_pending? %>
+                      <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium">Your grownup is checking... 👀</span>
+                    <% elsif latest&.status_rejected? %>
+                      <div class="flex flex-col items-end gap-1">
+                        <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-semibold">Try again! 🔄</span>
+                        <% if latest.parent_note.present? %>
+                          <p class="text-xs text-red-500 text-right max-w-[140px]"><%= latest.parent_note %></p>
+                        <% end %>
+                        <%= link_to 'Try Again', public_new_attempt_path(params[:token], assignment.id),
+                              class: 'mt-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700',
+                              data: { turbo_frame: "_top" } %>
+                      </div>
+                    <% elsif assignment.require_photo? %>
+                      <%= link_to 'Mark Done', public_new_attempt_path(params[:token], assignment.id),
+                            class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700',
+                            data: { turbo_frame: "_top" } %>
+                    <% else %>
+                      <%= button_to public_create_attempt_path(params[:token]), method: :post,
+                            params: { chore_assignment_id: assignment.id },
+                            class: 'px-3 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700' do %>
+                        Mark Done
+                      <% end %>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
             </div>
           <% end %>
         </div>
@@ -152,17 +286,30 @@
               <h3 class="text-sm font-medium text-gray-700 mb-2"><%= l(date, format: :long) %></h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <% items.each do |assignment| %>
-                  <div class="p-4 bg-white rounded-xl shadow-sm flex items-center justify-between gap-3">
-                    <div class="min-w-0">
+                  <div class="p-4 bg-white rounded-xl shadow-sm flex items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
                       <div class="font-semibold text-gray-900"><%= assignment.chore&.name || 'Chore' %></div>
                       <div class="text-sm text-gray-500"><%= assignment.chore&.definition_of_done %></div>
+                      <% if assignment.chore&.chore_tasks&.any? %>
+                        <div class="mt-2">
+                          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">What you need to do:</p>
+                          <ol class="space-y-0.5">
+                            <% assignment.chore.chore_tasks.each_with_index do |task, i| %>
+                              <li class="flex items-start gap-1.5 text-sm text-gray-700">
+                                <span class="text-amber-500 font-bold text-xs mt-0.5 shrink-0"><%= i + 1 %>.</span>
+                                <span><%= task.title %></span>
+                              </li>
+                            <% end %>
+                          </ol>
+                        </div>
+                      <% end %>
                     </div>
                     <div class="flex-shrink-0">
                       <% latest = assignment.latest_attempt %>
                       <% if assignment.approved == true %>
                         <span class="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-semibold">Done! ⭐</span>
                       <% elsif latest&.status_pending? %>
-                        <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium">Mom is checking... 👀</span>
+                        <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm font-medium">Your grownup is checking... 👀</span>
                       <% elsif latest&.status_rejected? %>
                         <div class="flex flex-col items-end gap-1">
                           <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-700 font-semibold">Try again! 🔄</span>

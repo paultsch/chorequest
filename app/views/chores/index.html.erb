@@ -10,7 +10,12 @@
       <p class="text-gray-600">Manage your family's chore library</p>
     </div>
     <% if current_parent %>
-      <%= link_to '+ New Chore', new_chore_path, class: "px-5 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-semibold transition-all" %>
+      <div class="flex gap-2">
+        <%= link_to 'Chore Health', chore_oversight_path,
+              class: "px-4 py-2.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold transition-all text-sm" %>
+        <%= link_to '+ New Chore', new_chore_path,
+              class: "px-5 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-semibold transition-all" %>
+      </div>
     <% end %>
   </div>
 

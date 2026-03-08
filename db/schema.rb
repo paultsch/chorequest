@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_06_212621) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_08_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -121,8 +121,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_06_212621) do
     t.string "ai_verdict"
     t.text "ai_message"
     t.datetime "ai_analyzed_at"
+    t.bigint "chore_task_id"
     t.index ["chore_assignment_id", "status"], name: "index_chore_attempts_on_chore_assignment_id_and_status"
     t.index ["chore_assignment_id"], name: "index_chore_attempts_on_chore_assignment_id"
+    t.index ["chore_task_id"], name: "index_chore_attempts_on_chore_task_id"
+  end
+
+  create_table "chore_tasks", force: :cascade do |t|
+    t.bigint "chore_id", null: false
+    t.string "title", null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "photo_required", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chore_id", "position"], name: "index_chore_tasks_on_chore_id_and_position"
+    t.index ["chore_id"], name: "index_chore_tasks_on_chore_id"
   end
 
   create_table "chores", force: :cascade do |t|
@@ -133,6 +146,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_06_212621) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "parent_id", null: false
+    t.integer "frequency_days"
     t.index ["parent_id"], name: "index_chores_on_parent_id"
   end
 
@@ -264,6 +278,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_06_212621) do
   add_foreign_key "chore_assignments", "children"
   add_foreign_key "chore_assignments", "chores"
   add_foreign_key "chore_attempts", "chore_assignments"
+  add_foreign_key "chore_attempts", "chore_tasks"
+  add_foreign_key "chore_tasks", "chores"
   add_foreign_key "chores", "parents"
   add_foreign_key "game_scores", "children"
   add_foreign_key "game_scores", "games"

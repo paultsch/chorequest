@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pyrch Parent Dashboard — POC Review</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen p-8">
+
+  <div class="max-w-4xl mx-auto">
+    <div class="mb-10">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">P</div>
+        <span class="font-bold text-xl">Pyrch</span>
+        <span class="text-gray-500 text-sm">/ Design POCs</span>
+      </div>
+      <h1 class="text-3xl font-bold mb-2">Parent Dashboard — Design Review</h1>
+      <p class="text-gray-400">5 distinct design directions for the Pyrch parent home page. Open each one, review, and note what you like and don't like. All POCs include the same mock data: 3 kids, 2 pending approvals, household chore health.</p>
+      <p class="text-gray-500 text-sm mt-2">Sprint 2026-03-07 · For Pyrch V2 planning</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <a href="poc-1-spotify-dark.html" target="_blank" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition group">
+        <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center mb-4 text-xl">🌑</div>
+        <h2 class="font-bold text-lg mb-1 group-hover:text-blue-400 transition">POC 1 — Spotify Dark</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">Dark theme with sidebar nav (desktop) and bottom tab bar (mobile). Accent colors on dark. Rue AI in the sidebar. Strong visual hierarchy with bright status indicators.</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Dark mode</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Sidebar nav</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Bottom tabs</span>
+        </div>
+        <p class="text-blue-500 text-sm font-semibold mt-4 group-hover:text-blue-300">Open →</p>
+      </a>
+
+      <a href="poc-2-clean-minimal.html" target="_blank" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition group">
+        <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center mb-4 text-xl">☁️</div>
+        <h2 class="font-bold text-lg mb-1 group-hover:text-blue-400 transition">POC 2 — Clean Minimal</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">White, airy, Apple/Linear-inspired. Top nav on desktop. Maximum whitespace. Data-dense but calm. Rue as a quiet suggestion card. Professional and trustworthy.</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Light mode</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Top nav</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Minimal</span>
+        </div>
+        <p class="text-blue-500 text-sm font-semibold mt-4 group-hover:text-blue-300">Open →</p>
+      </a>
+
+      <a href="poc-3-family-os.html" target="_blank" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition group">
+        <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center mb-4 text-xl">🏠</div>
+        <h2 class="font-bold text-lg mb-1 group-hover:text-blue-400 transition">POC 3 — Family OS</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">Child profile cards as the hero element. Colored top bar with dark blue brand. Rue as a sidebar panel. Household chore health prominently displayed. Modular feel.</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Child cards</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Modular</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Chore health</span>
+        </div>
+        <p class="text-blue-500 text-sm font-semibold mt-4 group-hover:text-blue-300">Open →</p>
+      </a>
+
+      <a href="poc-4-ai-first.html" target="_blank" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition group">
+        <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center mb-4 text-xl">🤖</div>
+        <h2 class="font-bold text-lg mb-1 group-hover:text-blue-400 transition">POC 4 — AI-First Split</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">Two-column layout: dashboard left (60%), Rue AI chat right (40%). Rue is a co-pilot, not a widget — she shows tool calls, proactively suggests actions, and executes commands conversationally.</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Split layout</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">AI chat</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Pyrch vision</span>
+        </div>
+        <p class="text-blue-500 text-sm font-semibold mt-4 group-hover:text-blue-300">Open →</p>
+      </a>
+
+      <a href="poc-5-mobile-first.html" target="_blank" class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition group">
+        <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center mb-4 text-xl">📱</div>
+        <h2 class="font-bold text-lg mb-1 group-hover:text-blue-400 transition">POC 5 — Mobile-First</h2>
+        <p class="text-gray-500 text-sm leading-relaxed">Phone-frame simulation on desktop. Large approval photos with big Approve/Reject buttons. Scroll-friendly approval queue. Rue as a contextual action strip. Built for thumbs first.</p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">375px first</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Large photos</span>
+          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Thumb-friendly</span>
+        </div>
+        <p class="text-blue-500 text-sm font-semibold mt-4 group-hover:text-blue-300">Open →</p>
+      </a>
+
+    </div>
+
+    <div class="mt-10 bg-gray-900 border border-gray-800 rounded-2xl p-6">
+      <h2 class="font-bold text-lg mb-3">Review Notes</h2>
+      <p class="text-gray-400 text-sm mb-4">After reviewing each POC, consider the following for your Pyrch decision:</p>
+      <ul class="text-gray-400 text-sm space-y-2 list-disc list-inside">
+        <li>Which nav pattern feels right? (sidebar / top bar / bottom tabs)</li>
+        <li>Where should Rue live? (sidebar, chat panel, inline card, floating button)</li>
+        <li>Should the chore health view be on the home page or a separate route?</li>
+        <li>Dark or light as the default theme?</li>
+        <li>Should child profile cards be the hero, or should the approval queue be primary?</li>
+        <li>Is the AI-split layout (POC 4) too complex for v1, or is it the right north star?</li>
+      </ul>
+    </div>
+  </div>
+
+</body>
+</html>

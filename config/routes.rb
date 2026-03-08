@@ -23,11 +23,13 @@ Rails.application.routes.draw do
   post 'chore_attempts/:id/approve', to: 'chore_attempts#approve', as: :approve_chore_attempt
   post 'chore_attempts/:id/reject', to: 'chore_attempts#reject', as: :reject_chore_attempt
   post 'chore_attempts/bulk_approve', to: 'chore_attempts#bulk_approve', as: :bulk_approve_chore_attempts
+  post 'chores/suggest_tasks', to: 'chores#suggest_tasks', as: :suggest_tasks_chores
   resources :chores do
     collection do
       post :improve_definition
     end
   end
+  get 'chore_oversight', to: 'chore_oversight#index', as: :chore_oversight
   resources :children do
     member do
       post :regenerate_public_link

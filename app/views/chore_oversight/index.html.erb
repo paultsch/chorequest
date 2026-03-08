@@ -1,0 +1,121 @@
+<div class="space-y-8">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-4xl font-bold text-gray-800 mb-1">Chore Health</h1>
+      <p class="text-gray-600">See which chores are overdue and what needs to be assigned next.</p>
+    </div>
+    <%= link_to "Back to Chores", chores_path,
+          class: "self-start sm:self-auto px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium" %>
+  </div>
+
+  <% if @rows.empty? %>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+      <div class="text-5xl mb-4">📋</div>
+      <h2 class="text-xl font-semibold text-gray-700 mb-2">No chores yet</h2>
+      <p class="text-gray-500 mb-6">Create some chores and set a repeat frequency to track health here.</p>
+      <%= link_to "Create a Chore", new_chore_path,
+            class: "inline-block px-5 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white font-semibold" %>
+    </div>
+  <% else %>
+    <%# Legend %>
+    <div class="flex flex-wrap gap-3">
+      <span class="inline-flex items-center gap-1.5 text-sm text-gray-600">
+        <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Overdue
+      </span>
+      <span class="inline-flex items-center gap-1.5 text-sm text-gray-600">
+        <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> Due Soon (within 2 days)
+      </span>
+      <span class="inline-flex items-center gap-1.5 text-sm text-gray-600">
+        <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> OK
+      </span>
+      <span class="inline-flex items-center gap-1.5 text-sm text-gray-600">
+        <span class="w-3 h-3 rounded-full bg-gray-300 inline-block"></span> No Schedule
+      </span>
+    </div>
+
+    <%# Mobile card layout (hidden on md+) %>
+    <div class="space-y-3 md:hidden">
+      <% @rows.each do |row| %>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="font-semibold text-gray-800"><%= row[:chore].name %></div>
+            <%= render 'status_badge', status: row[:status] %>
+          </div>
+          <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            <dt class="text-gray-500">Last done</dt>
+            <dd class="text-gray-800 font-medium">
+              <%= row[:last_completed_on] ? l(row[:last_completed_on], format: :long) : "Never" %>
+            </dd>
+            <dt class="text-gray-500">Frequency</dt>
+            <dd class="text-gray-800">
+              <%= row[:frequency_days] ? "Every #{row[:frequency_days]} days" : "—" %>
+            </dd>
+            <dt class="text-gray-500">Due again</dt>
+            <dd class="text-gray-800">
+              <%= row[:due_on] ? l(row[:due_on], format: :long) : "—" %>
+            </dd>
+          </dl>
+          <div class="mt-3 flex gap-2">
+            <%= link_to "Edit", edit_chore_path(row[:chore]),
+                  class: "px-3 py-1.5 text-xs rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium" %>
+            <%= link_to "Assign", new_chore_assignment_path(chore_id: row[:chore].id),
+                  class: "px-3 py-1.5 text-xs rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Desktop table (hidden on small screens) %>
+    <div class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-5 py-3 text-sm font-semibold text-gray-700">Chore</th>
+            <th class="text-left px-5 py-3 text-sm font-semibold text-gray-700">Last Completed</th>
+            <th class="text-left px-5 py-3 text-sm font-semibold text-gray-700">Frequency</th>
+            <th class="text-left px-5 py-3 text-sm font-semibold text-gray-700">Due Again</th>
+            <th class="text-left px-5 py-3 text-sm font-semibold text-gray-700">Status</th>
+            <th class="text-right px-5 py-3 text-sm font-semibold text-gray-700">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @rows.each do |row| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-5 py-4 font-medium text-gray-800"><%= row[:chore].name %></td>
+              <td class="px-5 py-4 text-sm text-gray-600">
+                <%= row[:last_completed_on] ? l(row[:last_completed_on], format: :long) : %(<span class="text-gray-400 italic">Never</span>).html_safe %>
+              </td>
+              <td class="px-5 py-4 text-sm text-gray-600">
+                <%= row[:frequency_days] ? "Every #{row[:frequency_days]} days" : %(<span class="text-gray-400">—</span>).html_safe %>
+              </td>
+              <td class="px-5 py-4 text-sm text-gray-600">
+                <% if row[:due_on] %>
+                  <%= l(row[:due_on], format: :long) %>
+                  <% if row[:days_until_due] %>
+                    <span class="text-xs text-gray-400 ml-1">
+                      (<%= row[:days_until_due] < 0 ? "#{row[:days_until_due].abs}d ago" : "in #{row[:days_until_due]}d" %>)
+                    </span>
+                  <% end %>
+                <% else %>
+                  <span class="text-gray-400">—</span>
+                <% end %>
+              </td>
+              <td class="px-5 py-4">
+                <%= render 'status_badge', status: row[:status] %>
+              </td>
+              <td class="px-5 py-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <%= link_to "Edit", edit_chore_path(row[:chore]),
+                        class: "px-3 py-1 text-sm rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium" %>
+                  <%= link_to "Assign", new_chore_assignment_path(chore_id: row[:chore].id),
+                        class: "px-3 py-1 text-sm rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium" %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

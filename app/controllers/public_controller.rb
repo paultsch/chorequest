@@ -7,11 +7,17 @@ class PublicController < ApplicationController
     # Prefer date-based assignments (scheduled_on) but also support legacy 'day' weekday assignments
     today = Date.current
     weekday = today.strftime("%A").downcase
-    @assignments = @child.chore_assignments.where('scheduled_on = ? OR (day IS NOT NULL AND lower(day) = ?)', today, weekday).order(:scheduled_on)
+    @assignments = @child.chore_assignments
+      .includes(chore: :chore_tasks, chore_attempts: { photo_attachment: :blob })
+      .where('scheduled_on = ? OR (day IS NOT NULL AND lower(day) = ?)', today, weekday)
+      .order(:scheduled_on)
 
     # Upcoming chores for next 90 days (include completed so parent can see status)
     cutoff = today + 90.days
-    @upcoming = @child.chore_assignments.where('scheduled_on > ? AND scheduled_on <= ?', today, cutoff).order(:scheduled_on)
+    @upcoming = @child.chore_assignments
+      .includes(chore: :chore_tasks, chore_attempts: { photo_attachment: :blob })
+      .where('scheduled_on > ? AND scheduled_on <= ?', today, cutoff)
+      .order(:scheduled_on)
   end
 
   def complete
@@ -52,11 +58,13 @@ class PublicController < ApplicationController
     @chore_assignment = @child.chore_assignments.find_by(id: params[:assignment_id])
     return render plain: "Not found", status: :not_found unless @chore_assignment
 
-    if @chore_assignment.pending_attempt?
-      redirect_to public_child_path(params[:token]), alert: 'This chore is already awaiting review.' and return
-    end
     if @chore_assignment.approved == true
       redirect_to public_child_path(params[:token]), alert: 'This chore has already been approved.' and return
+    end
+
+    # For whole-chore submissions only: block if there is already a pending attempt with no task
+    if params[:chore_task_id].blank? && @chore_assignment.chore_attempts.where(chore_task_id: nil, status: 'pending').exists?
+      redirect_to public_child_path(params[:token]), alert: 'This chore is already awaiting review.' and return
     end
   end
 
@@ -68,17 +76,50 @@ class PublicController < ApplicationController
     @chore_assignment = @child.chore_assignments.find_by(id: params[:chore_assignment_id])
     return render plain: "Not found", status: :not_found unless @chore_assignment
 
-    if @chore_assignment.pending_attempt?
-      redirect_to public_child_path(params[:token]), alert: 'This chore is already awaiting review.' and return
+    chore_task_id = params.dig(:chore_attempt, :chore_task_id).presence
+    task = chore_task_id ? @chore_assignment.chore.chore_tasks.find_by(id: chore_task_id) : nil
+
+    # Non-photo tasks are auto-approved immediately — no review needed
+    auto_approve = task.present? && !task.photo_required?
+
+    # Block duplicate approved/pending attempts for this task
+    if chore_task_id.present?
+      if @chore_assignment.chore_attempts.where(chore_task_id: chore_task_id, status: %w[pending approved]).exists?
+        redirect_to public_child_path(params[:token]), alert: 'This step is already done.' and return
+      end
+    else
+      if @chore_assignment.chore_attempts.where(chore_task_id: nil, status: 'pending').exists?
+        redirect_to public_child_path(params[:token]), alert: 'This chore is already awaiting review.' and return
+      end
     end
 
-    attempt = @chore_assignment.chore_attempts.build(status: 'pending')
+    attempt = @chore_assignment.chore_attempts.build(
+      status: auto_approve ? 'approved' : 'pending',
+      chore_task_id: chore_task_id
+    )
     attempt.photo.attach(params.dig(:chore_attempt, :photo)) if params.dig(:chore_attempt, :photo).present?
 
     if attempt.valid? && attempt.save
-      @chore_assignment.update!(completed: true, approved: nil, completed_at: Time.current)
-      AnalyzeChorePhotoJob.perform_later(attempt.id) if attempt.photo.attached?
-      redirect_to public_child_path(params[:token]), notice: 'Chore submitted for review!'
+      chore = @chore_assignment.chore
+      required_tasks = chore.chore_tasks.where(photo_required: true)
+
+      if required_tasks.any?
+        # Chore has photo-required steps — mark completed when all photo tasks have been submitted
+        all_submitted = required_tasks.all? { |t| @chore_assignment.chore_attempts.where(chore_task_id: t.id).exists? }
+        @chore_assignment.update!(completed: all_submitted, completed_at: all_submitted ? Time.current : nil)
+      elsif chore.chore_tasks.any?
+        # All tasks are non-photo — auto-approve the assignment when every task is checked off
+        all_approved = chore.chore_tasks.all? { |t| @chore_assignment.chore_attempts.where(chore_task_id: t.id, status: 'approved').exists? }
+        if all_approved
+          @chore_assignment.update!(completed: true, approved: true, completed_at: Time.current)
+        end
+      else
+        @chore_assignment.update!(completed: true, approved: nil, completed_at: Time.current)
+      end
+
+      AnalyzeChorePhotoJob.perform_later(attempt.id) if attempt.photo.attached? && !auto_approve
+      notice = auto_approve ? 'Step marked done! ✓' : 'Chore submitted for review!'
+      redirect_to public_child_path(params[:token]), notice: notice
     else
       render :new_attempt, status: :unprocessable_entity
     end
